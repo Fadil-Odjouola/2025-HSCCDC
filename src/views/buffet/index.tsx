@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./index.css"
+import { Link } from "react-router";
 
 const BASE_URL = "https://qoverflow.api.hscc.bdpa.org/v1"
 
@@ -83,12 +84,15 @@ export default function Buffet() {
         <ul>
             {questions.map((question) => (
                 <li key={question.question_id}>
-                    <div><strong>{question.title}</strong></div>
-                    <div>Upvotes: {question.upvotes}</div>
-                    <div>Views: {question.views}</div>
-                    <div>Comments: {question.comments}</div>
-                    <div>By: {question.creator}</div>
-                    <div>Date: {new Date(question.createAt).toLocaleString()}</div>
+                    <Link to={`/QA/${question.question_id}`}>
+                        <div><strong>{question.title}</strong></div>
+                        <div>Upvotes: {question.upvotes}</div>
+                        <div>Views: {question.views}</div>
+                        <div>Comments: {question.comments}</div>
+                        <div>By: {question.creator}</div>
+                        <div>ID: {question.question_id}</div>
+                        <div>Date: {new Date(question.createAt).toLocaleString()}</div>
+                    </Link>
                 </li>
             ))}
         </ul>
