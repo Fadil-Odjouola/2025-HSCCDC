@@ -1,23 +1,12 @@
 import { useEffect, useState } from "react";
 import "./index.css"
 import { Link } from "react-router";
+import { fetchQuestions } from "@/api/questions";
+import type { Question } from "@/types/questions";
 
 const BASE_URL = "https://qoverflow.api.hscc.bdpa.org/v1"
 
-interface Question {
-    creator: string;
-    title: string;
-    createAt: number;
-    text: string;
-    status: string;
-    hasAcceptedAnswer: boolean;
-    upvotes: number;
-    downvotes: number;
-    answers: number;
-    views: number;
-    comments: number;
-    question_id: number;
-}
+
 
 
 
@@ -33,14 +22,8 @@ export default function Buffet() {
             setIsLoading(true);
 
             try {
-                const response = await fetch( `${BASE_URL}/questions/search?${sorting!="d" ? `sort=${sorting}` : ""}`,{
-                    headers: {
-                    "Authorization": "bearer 1ded7eb6-ab91-47f7-9cf7-7d1319a32e18",
-                    "Content-Type": "application/json"
-                    }
-                });
-                const data = await response.json();
-                setQuestions(data.questions ?? []);
+                const response = await fetchQuestions(sorting);
+                setQuestions(response);
             } catch (error: any) {
                 setError(error);
             } finally{
