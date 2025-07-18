@@ -5,16 +5,30 @@ import {
   RouterProvider,
 } from "react-router";
 import navbar_data from "./data/navbarData";
-import Buffet from "./views/buffet";
-import Auth from "./views/auth";
-import QA from "./views/qa";
-import Mail from "./views/mail";
-import Dashboard from "./views/dashboard";
+import "./index.css"
+import Navbar from "./components/navbar";
+import Login from "./views/auth/login/login";
+import Signup from "./views/auth/signup/singup";
 
-let router = createBrowserRouter(navbar_data);
+
+const router = createBrowserRouter([
+  ...navbar_data.map((item) => ({
+    path: item.path,
+    element: item.element,
+  })),
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/signup",
+    element: <Signup />,
+  },
+]);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+        <Navbar/>
     <RouterProvider router={router} />
   </StrictMode>,
 )

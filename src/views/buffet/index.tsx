@@ -3,6 +3,8 @@ import "./index.css"
 import { Link } from "react-router";
 import { fetchQuestions } from "@/api/questions";
 import type { Question } from "@/types/questions";
+import Navbar from "@/components/navbar";
+import NavBar from "@/components/navbar";
 
 const BASE_URL = "https://qoverflow.api.hscc.bdpa.org/v1"
 
@@ -49,7 +51,7 @@ export default function Buffet() {
     return <>
         <h1>Buffet</h1>
         <div></div>
-        <div className="sort-controls">
+        <div className="sort-controls ">
             <span>Sort by:</span>
             <button onClick={() => setSorting("d")} className={getButtonClass("d")} style={{backgroundColor: sorting === "d" ? "grey" : "white"}}>
                 Latest
