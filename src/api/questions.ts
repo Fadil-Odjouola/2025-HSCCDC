@@ -1,6 +1,6 @@
 
 // src/api/questions.ts
-import type { Question } from "../types/questions.ts";
+import type { Question } from "@/types/questions";
 
 const BASE_URL = "https://qoverflow.api.hscc.bdpa.org/v1";
 
@@ -13,11 +13,14 @@ export async function fetchQuestions(sorting: string): Promise<Question[]> {
             "Content-Type": "application/json"
         }
     });
-
-    if (!response.ok) {
+    if (response.ok) {
+        console.log("questions fetched succesfully")
+    }
+    else {
         throw new Error("Failed to fetch questions");
     }
 
     const data = await response.json();
+    console.log(data)
     return data.questions ?? [];
 }

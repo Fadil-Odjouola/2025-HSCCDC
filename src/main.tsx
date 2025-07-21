@@ -1,34 +1,31 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import {
-  createBrowserRouter,
-  RouterProvider,
-} from "react-router";
-import navbar_data from "./data/navbarData";
-import "./index.css"
+import { createBrowserRouter, RouterProvider } from "react-router";
+import "./index.css";
 import Navbar from "./components/navbar";
-import Login from "./views/auth/login/login";
 import Signup from "./views/auth/signup/singup";
+import Buffet from "@/views/buffet/buffet";
+import Mail from "./views/mail/indexMail";
 
 
 const router = createBrowserRouter([
-  ...navbar_data.map((item) => ({
-    path: item.path,
-    element: item.element,
-  })),
   {
-    path: "/login",
-    element: <Login />,
+    path: '/',
+    element: <Buffet/>
   },
   {
-    path: "/signup",
+    path: "/mail",
+    element: <Mail/>
+  },
+  {
+    path: "/register",
     element: <Signup />,
   },
 ]);
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
-        <Navbar/>
+    <Navbar />
     <RouterProvider router={router} />
-  </StrictMode>,
-)
+  </StrictMode>
+);

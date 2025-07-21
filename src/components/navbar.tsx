@@ -2,23 +2,28 @@ import { useState, useEffect } from "react";
 import { Menu, X, Search, Bell, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./miniUI/button";
-import navbar_data from "@/data/navbarData";
+//import navbar_data from "@/data/navbarData";
+import { getUserLocal } from "./backend";
 
-
-type NavItem = {
-  title: string;
-  path: string;
-  active: boolean;
-  element: React.ReactNode;
-};
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(true);
-  const currentUrl = window.location.pathname;
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setusername] = useState("")
+  const currentUrl = window.location.href;
 
-  const setActive = (currenturl: string) => {
+  useEffect(() => {
+    const user = getUserLocal();
+    if (user) {
+      setIsLoggedIn(true);
+      setusername(user.username)
+    }
+    console.log(user);
+  }, []);
+
+  /*const setActive = (currenturl: string) => {
     setnavItems((prev: NavItem[]) =>
       prev.map((item) =>
         item.path === currenturl
@@ -26,10 +31,10 @@ export default function Navbar() {
           : { ...item, active: false }
       )
     );
-  };
+  };*/
 
   useEffect(() => {
-    setActive(currentUrl);
+    //   setActive(currentUrl);
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 25);
     };
@@ -37,12 +42,18 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [currentUrl]);
 
-  const [navItems, setnavItems] = useState<NavItem[]>(navbar_data);
+  // const [navItems, setnavItems] = useState<NavItem[]>(navbar_data);
+  const logout = () => {
+    setIsLoggedIn(false);
+    localStorage.clear();
+    sessionStorage.clear()
+    window.location.href = "/";
+  };
 
   return (
     <nav
       className={`
-        fixed top-0 left-0 right-0 z-50 transition-all duration-300 flex flex-row
+        fixed top-0 left-0 right-0 z-50 transition-all duration-300 flex flex-row 
         ${
           isScrolled
             ? "bg-white/80 backdrop-blur-lg border-b border-border shadow-sm"
@@ -50,7 +61,7 @@ export default function Navbar() {
         }
       `}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <div
@@ -67,7 +78,7 @@ export default function Navbar() {
           </div>
 
           <div className="w-max h-max">
-            <Button className=" md:flex  flex items-center justify-center">
+            <div className=" md:flex  flex items-center justify-center">
               <button
                 onClick={() => {
                   setSearchOpen((prev) => !prev);
@@ -80,7 +91,7 @@ export default function Navbar() {
                   viewBox="0 0 24 24"
                   strokeWidth={2}
                   stroke="currentColor"
-                  className="size-7"
+                  className="size-5"
                 >
                   <path
                     strokeLinecap="round"
@@ -99,32 +110,77 @@ export default function Navbar() {
                   style={{ minWidth: searchOpen ? "12rem" : "0" }}
                 />
               </div>
-            </Button>
+            </div>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-8">
-            {navItems.map((item) => (
-              <div key={item.title} className="relative group">
-                <a
-                  href={item.path}
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-[16.5px] font-medium transition-all duration-300 ${
-                    item.active
-                      ? "text-[#7C3CED] hover:bg-[#F2EBFD] "
-                      : "hover:bg-gray-100 opacity-65 hover:opacity-100 hover:font-bold"
-                  }`}
-                >
-                  <span>{item.title}</span>
-                </a>
-              </div>
-            ))}
+            {isLoggedIn ? (
+              <>
+                <div className="relative group">
+                  <a
+                    href="/"
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-md text-[16.5px] font-medium transition-all duration-300 ${
+                      window.location.pathname  === "/"
+                        ? "text-[#7C3CED]  hover:bg-[#F2EBFD] bg-[#E8D7FF] "
+                        : "hover:bg-gray-100 opacity-65 hover:opacity-100 hover:font-bold"
+                    }`}
+                  >
+                    <span>Home</span>
+                  </a>
+                </div>
+                <div className="relative group">
+                  <a
+                    href="/mail"
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-md text-[16.5px] font-medium transition-all duration-300 ${
+                      window.location.pathname === "/mail"
+                        ? "text-[#7C3CED]  hover:bg-[#F2EBFD] bg-[#E8D7FF] "
+                        : "hover:bg-gray-100 opacity-65 hover:opacity-100 hover:font-bold"
+                    }`}
+                  >
+                    <span>Mail</span>
+                  </a>
+                </div>
+              </>
+            ) : null}
+
+            {/* 
+            {*/}
           </div>
           {/* Right Side Actions */}
           <div className="flex items-center justify-around space-x-4 w-max h-max p-2 ">
-            <div className="relative md:flex items-center space-x-3">
-              <Button className="bg-[#7C3CED] w-max h-max p-3 pr-4 pl-4 font-bold text-white hover:bg-[#894EEF] transition-all duration-300 ease-linear cursor-pointer">Login</Button>
-              <Button className="bg-[#4C1D95] w-max h-max p-3 pr-4 pl-4 font-bold text-white hover:bg-[#5B21B6] transition-all duration-300 ease-linear cursor-pointer">Sign up</Button>
-            </div>
+            {isLoggedIn ? (
+              <div className="relative inline-block text-left group">
+                <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-300 shadow hover:shadow-md transition-all duration-200 hover:bg-gray-100 focus:outline-none">
+                  <User className="w-5 h-5 text-gray-700" />
+                  <span className="font-medium text-gray-700">{username}</span>
+                </button>
+
+                <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                  <button className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100">
+                    View Profile
+                  </button>
+                  <button className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100">
+                    Settings
+                  </button>
+                  <button
+                    className="block w-full px-4 py-2 text-left text-red-600 hover:bg-red-100"
+                    onClick={logout}
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="relative md:flex items-center space-x-3">
+                <Button
+                  className="bg-[#7C3CED] w-max h-max p-3 pr-4 pl-4 font-bold text-white hover:bg-[#894EEF] transition-all duration-300 ease-linear cursor-pointer"
+                  onClick={() => (window.location.href = "/register")}
+                >
+                  Register
+                </Button>
+              </div>
+            )}
 
             {/* Mobile Menu Button */}
             <Button
@@ -150,6 +206,7 @@ export default function Navbar() {
           )}
         >
           <div className="py-4 space-y-2 border-t border-border">
+            {/* 
             {navItems.map((item) => (
               <a
                 key={item.title}
@@ -163,7 +220,7 @@ export default function Navbar() {
               >
                 {item.title}
               </a>
-            ))}
+            ))}*/}
             <div className="pt-4 mt-4 border-t border-border space-y-2">
               <Button
                 variant="ghost"

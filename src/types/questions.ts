@@ -12,3 +12,4 @@ export interface Question {
     comments: number;
     question_id: number;
 }
+
