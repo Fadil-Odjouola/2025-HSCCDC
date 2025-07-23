@@ -1,7 +1,7 @@
 export interface Question {
     creator: string;
     title: string;
-    createAt: number;
+    createdAt: number;
     text: string;
     status: string;
     hasAcceptedAnswer: boolean;
@@ -11,5 +11,6 @@ export interface Question {
     views: number;
     comments: number;
     question_id: number;
+    acceptedAnswerId: boolean
 }
 

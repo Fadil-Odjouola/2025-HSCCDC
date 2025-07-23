@@ -1,10 +1,9 @@
-
 // src/api/questions.ts
 import type { Question } from "@/types/questions";
 
 const BASE_URL = "https://qoverflow.api.hscc.bdpa.org/v1";
 
-export async function fetchQuestions(sorting: string): Promise<Question[]> {
+export async function fetchQuestions(sorting: string = "d"): Promise<Question[]> {
     const url = `${BASE_URL}/questions/search?${sorting !== "d" ? `sort=${sorting}` : ""}`;
 
     const response = await fetch(url, {
@@ -13,14 +12,14 @@ export async function fetchQuestions(sorting: string): Promise<Question[]> {
             "Content-Type": "application/json"
         }
     });
+
     if (response.ok) {
-        console.log("questions fetched succesfully")
-    }
-    else {
+        console.log("questions fetched successfully");
+    } else {
         throw new Error("Failed to fetch questions");
     }
 
     const data = await response.json();
-    console.log(data)
+    console.log(data);
     return data.questions ?? [];
 }

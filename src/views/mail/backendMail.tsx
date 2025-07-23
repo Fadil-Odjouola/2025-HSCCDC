@@ -57,9 +57,9 @@ export async function getmail(username: string ,apikey: string) {
 
     const result: any = await response.json()
     console.log(result)
-    
-    if (result.ok) {
-        console.log("Mail sent good job")
+
+    if (result.success) {
+        console.log("you got all the mailr")
         return result
     } else{
         console.log(`ERROR: ${result.error}`)

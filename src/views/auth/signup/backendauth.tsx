@@ -12,12 +12,10 @@ interface ApiResponse {
 }
 
 export async function handleSubmit(
-  e: React.FormEvent<HTMLFormElement>,
   form: FormData,
   responseMSg: (msg: string) => void,
   apikey: string
 ): Promise<void> {
-  e.preventDefault();
 
   try {
     const { key, salt } = await deriveKeyWithSalt(form.password);
