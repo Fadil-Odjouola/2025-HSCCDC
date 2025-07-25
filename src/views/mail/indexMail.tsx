@@ -26,7 +26,9 @@ const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
 const MessageCard = ({ message }: { message: Message }) => {
   return (
     <div className="border rounded-lg p-4 shadow-sm bg-white w-full break-words">
-      <h4 className="text-lg sm:text-xl font-semibold truncate">{message.subject}</h4>
+      <h4 className="text-lg sm:text-xl font-semibold truncate">
+        {message.subject}
+      </h4>
       <p className="text-sm text-gray-500 truncate">From: {message.sender}</p>
       <p className="mt-2 text-gray-700 whitespace-pre-wrap">{message.text}</p>
     </div>
@@ -68,6 +70,7 @@ const Mail = () => {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bigerror, SetBigError] = useState(false);
 
   const [mail, Setmail] = useState<NewMail>({
     sender: "",
@@ -94,8 +97,10 @@ const Mail = () => {
       try {
         const result = await getmail(mail.sender, apikey);
         setMessages(result.messages);
+        SetBigError(false);
       } catch (err) {
         console.error(err);
+        SetBigError(true);
         setError("Failed to load messages. Please try again later.");
       } finally {
         setLoading(false);
@@ -136,7 +141,9 @@ const Mail = () => {
       {/* Form */}
       <div
         className={`overflow-hidden transition-all duration-500 ease-in-out ${
-          showForm ? "max-h-[1000px] opacity-100 scale-100 mb-6" : "max-h-0 opacity-0 scale-95 mb-0"
+          showForm
+            ? "max-h-[1000px] opacity-100 scale-100 mb-6"
+            : "max-h-0 opacity-0 scale-95 mb-0"
         } border rounded-lg p-4 shadow-md bg-white`}
       >
         <h3 className="text-lg font-semibold mb-4">New Mail</h3>
@@ -175,7 +182,10 @@ const Mail = () => {
 
       {/* Toast */}
       {showMessage && (
-        <MailSentMessage duration={2500} onFadeOut={() => setShowMessage(false)} />
+        <MailSentMessage
+          duration={2500}
+          onFadeOut={() => setShowMessage(false)}
+        />
       )}
 
       {/* Loading spinner */}

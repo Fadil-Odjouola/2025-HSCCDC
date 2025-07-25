@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Question } from "@/types/questions";
 import { fetchQuestions } from "@/api/questions";
 import { useSearch } from "@/context/SearchContext";
@@ -8,7 +8,7 @@ import Popover from "./extra/Popover";
 import dayjs from "dayjs";
 import { getUserLocal } from "@/components/backendUserLocal";
 import { useUser } from "@/context/UserContext";
-import level from "@/api/levelSys";
+import { motion } from "framer-motion";
 
 
 type SortType = "recent" | "best" | "interesting" | "hot";
@@ -21,11 +21,14 @@ const sortMap: Record<Exclude<SortType, "recent">, "u" | "uvc" | "uvac"> = {
 
 function QuestionCard({ question }: { question: Question }) {
   return (
-    <a
+    <motion.a
       href={`/question/${question.question_id}`}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
       className="w-full sm:w-[48%] lg:w-[31%]"
     >
-      <div className="rounded-2xl border p-4 hover:shadow-lg transition-all duration-300 bg-white mb-3 h-full">
+      <div className="rounded-2xl border p-4 hover:shadow-xl transition-all duration-300 bg-white mb-3 h-full">
         <div className="text-lg sm:text-xl font-semibold mb-1 text-gray-800">
           {question.title}
         </div>
@@ -46,13 +49,13 @@ function QuestionCard({ question }: { question: Question }) {
           <span className="text-[16px]">
             <span className="font-bold">Creator:</span> {question.creator}
           </span>
-          <span className="text-xs text-gray-600">
+          <span className="text-xs text-gray-500">
             {dayjs(question.createdAt).format("M/D/YYYY")} -{" "}
             {dayjs(question.createdAt).fromNow()}
           </span>
         </div>
       </div>
-    </a>
+    </motion.a>
   );
 }
 
@@ -65,13 +68,12 @@ export default function Buffet() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoggedin, setLoggedIn] = useState(false);
   const { searchQuery } = useSearch();
-  const { user, } = useUser();
+  const { user } = useUser();
 
   const filteredQuestions = searchQuestions(questions, searchQuery);
   const currentQuestions = filteredQuestions
     .slice(0, 100)
     .slice((currentPage - 1) * 12, currentPage * 12);
-
   const totalPages = Math.ceil(Math.min(filteredQuestions.length, 100) / 12);
 
   useEffect(() => {
@@ -84,7 +86,7 @@ export default function Buffet() {
       setError(null);
       try {
         if (sortType === "recent") {
-          const response = await fetchQuestions(); // no sort param
+          const response = await fetchQuestions();
           setQuestions(response);
         } else {
           const response = await fetchQuestions(sortMap[sortType]);
@@ -106,7 +108,6 @@ export default function Buffet() {
     }
   }, []);
 
-
   if (isLoading) {
     return (
       <div className="pt-16 p-6 max-w-3xl mx-auto bg-gray-50 rounded-xl shadow-sm mt-20 text-center text-gray-700">
@@ -124,39 +125,37 @@ export default function Buffet() {
   }
 
   return (
-    <div className="pt-16 p-4 sm:p-6 max-w-screen-xl mx-auto space-y-6 bg-gray-50 rounded-xl shadow-sm mt-20">
+    <motion.div
+      initial={{ opacity: 0, y: 25 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.75}}
+      className="pt-16 p-4 sm:p-6 max-w-screen-xl mx-auto space-y-6 bg-gray-50 rounded-xl shadow-md mt-20"
+    >
       {/* Sort and Create Button */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-y-4">
         <div className="flex flex-wrap gap-2">
-          {(
-            [
-              ["recent", "Recent"],
-              ["best", "Best"],
-              ["interesting", "Interesting"],
-              ["hot", "Hottest"],
-            ] as const
-          ).map(([type, label]) => (
+          {(["recent", "best", "interesting", "hot"] as const).map((type) => (
             <button
               key={type}
               onClick={() => setSortType(type)}
-              className={`px-4 py-2 rounded-lg transition text-sm sm:text-base ${
+              className={`px-4 py-2 rounded-full font-medium transition text-sm sm:text-base border ${
                 sortType === type
-                  ? "bg-gray-800 text-white hover:bg-gray-700"
-                  : "bg-gray-300 text-gray-800 hover:bg-gray-400"
+                  ? "bg-gray-800 text-white border-transparent shadow-sm"
+                  : "bg-white text-gray-800 border-gray-300 hover:bg-gray-100"
               }`}
             >
-              {label}
+              {type.charAt(0).toUpperCase() + type.slice(1)}
             </button>
           ))}
         </div>
-        {isLoggedin ? (
+        {isLoggedin && (
           <Button
-            className="bg-blue-600 p-2 px-4 font-bold text-white hover:bg-blue-700 transition-all duration-300 ease-linear"
+            className="bg-blue-600 p-2 px-4 font-bold text-white hover:bg-blue-700 transition-all duration-300 ease-linear rounded-full shadow"
             onClick={() => setShow(true)}
           >
             Create a question
           </Button>
-        ) : null}
+        )}
       </div>
 
       {show && <Popover onClose={() => setShow(false)} />}
@@ -190,8 +189,8 @@ export default function Buffet() {
               onClick={() => setCurrentPage(num)}
               className={`px-3 py-1 rounded-lg border text-sm transition ${
                 num === currentPage
-                  ? "bg-gray-800 text-white"
-                  : "bg-white text-gray-800 hover:bg-gray-200"
+                  ? "bg-gray-800 text-white border-transparent"
+                  : "bg-white text-gray-800 border-gray-300 hover:bg-gray-200"
               }`}
             >
               {num}
@@ -201,6 +200,6 @@ export default function Buffet() {
           <span className="px-2 select-none">...</span>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

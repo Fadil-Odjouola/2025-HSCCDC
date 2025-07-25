@@ -17,6 +17,7 @@ import { PaginatedAnswers } from "./paginated";
 import PaginatedComments from "./paginatedComments";
 import { getUserLocal } from "@/components/backendUserLocal";
 import { useUser } from "@/context/UserContext";
+import { updatePoints } from "@/api/changepoints";
 
 dayjs.extend(relativeTime);
 const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
@@ -75,7 +76,6 @@ async function getLevel(username: string) {
 export default function QA() {
   const [newAnswer, setNewAnswer] = useState("");
   const [newComment, setNewComment] = useState("");
-  const [preview, setPreview] = useState(false);
   const [creatorLevel, setCreatorLevel] = useState(0);
   const [isError, setIsError] = useState(false);
   const [isErrorComments, setIsErrorComments] = useState(false);
@@ -127,6 +127,7 @@ export default function QA() {
         });
         if (!user?.points) return;
         updateUser({ points: user.points + 2 });
+        updatePoints(user.username, "increment", 2);
       } else {
         setanswerError({
           showError: true,
@@ -151,6 +152,7 @@ export default function QA() {
       const result = await getQAquestion(questionid, apikey);
       SetIsErrorQuestoin(false);
       if (result.success) {
+        SetIsErrorQuestoin(false);
         setQuestoin({
           creator: result.question.creator,
           title: result.question.title,
@@ -219,42 +221,53 @@ export default function QA() {
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6 mt-20 ">
       <div className="border rounded-lg p-4 shadow-md">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">{question.title}</h1>
-          <div className="text-sm text-gray-500">
-            <span className="text-[15px] text-gray-500 font-semibold mr-1">
-              Asked:
-            </span>
-            {dayjs(question.createdAt).format("M/D/YYYY")} -{" "}
-            {dayjs(question.createdAt).fromNow()}
-          </div>
-        </div>
-        <div className="text-sm text-gray-600">
-          <span className="text-[15px] text-gray-500 font-semibold">
-            Views:
-          </span>
-          {question.views} |
-          <span className=" ml-1 text-[15px] text-gray-500 font-semibold">
-            Points:
-          </span>
-          {question.upvotes - question.downvotes}
-        </div>
-        <div className="flex items-center mt-2 gap-2">
-          <img
-            src={question.creator}
-            alt={question.creator}
-            className="w-8 h-8 rounded-full"
-          />
-          <span className="font-medium">
-            <span className="mr-1 text-[15px] text-gray-500 font-semibold">
-              Creator:
-            </span>
-            {question.creator} |{" "}
-            <span className="mr-1 text-[15px] text-gray-500 font-semibold">
-              level:
-            </span>{" "}
-            {creatorLevel}
-          </span>
+        <div>
+          {" "}
+          {isErrorQuestion ? (
+            <div className=" p-6 max-w-3xl mx-auto bg-red-50 rounded-xl shadow-sm text-center text-red-600 mb-2">
+              Error loading questions
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold">{question.title}</h1>
+                <div className="text-sm text-gray-500">
+                  <span className="text-[15px] text-gray-500 font-semibold mr-1">
+                    Asked:
+                  </span>
+                  {dayjs(question.createdAt).format("M/D/YYYY")} -{" "}
+                  {dayjs(question.createdAt).fromNow()}
+                </div>
+              </div>
+              <div className="text-sm text-gray-600">
+                <span className="text-[15px] text-gray-500 font-semibold">
+                  Views:
+                </span>
+                {question.views} |
+                <span className=" ml-1 text-[15px] text-gray-500 font-semibold">
+                  Points:
+                </span>
+                {question.upvotes - question.downvotes}
+              </div>
+              <div className="flex items-center mt-2 gap-2">
+                <img
+                  src={question.creator}
+                  alt={question.creator}
+                  className="w-8 h-8 rounded-full"
+                />
+                <span className="font-medium">
+                  <span className="mr-1 text-[15px] text-gray-500 font-semibold">
+                    Creator:
+                  </span>
+                  {question.creator} |{" "}
+                  <span className="mr-1 text-[15px] text-gray-500 font-semibold">
+                    level:
+                  </span>{" "}
+                  {creatorLevel}
+                </span>
+              </div>
+            </>
+          )}
         </div>
         <div>
           <MarkdownRenderer body={question.text} />
@@ -331,13 +344,6 @@ export default function QA() {
               Post Comment
             </button>
           </div>
-          {preview && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="border mt-4 p-4 bg-gray-50 rounded shadow"
-            ></motion.div>
-          )}
         </div>
       </div>
     </div>

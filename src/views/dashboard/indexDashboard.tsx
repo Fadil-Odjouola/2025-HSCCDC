@@ -11,6 +11,8 @@ import {
   deleteAccount,
 } from "./backendDashboard";
 import { motion } from "framer-motion";
+import { useUser } from "@/context/UserContext";
+
 
 const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
 
@@ -18,6 +20,17 @@ type MailSentMessageProps = {
   duration?: number;
   onFadeOut?: () => void;
   message: string;
+};
+
+type answer = {
+  answer_id: string;
+  comments: number;
+  createdAt: number;
+  creator: string;
+  text: string;
+  question_id: string;
+  upvotes: number;
+  downvotes: number;
 };
 
 const MailSentMessage: React.FC<MailSentMessageProps> = ({
@@ -65,17 +78,7 @@ const CardContent = ({ children }: { children: React.ReactNode }) => (
 );
 
 const Dashboard = () => {
-  const [user, setUser] = useState<UserLocal>({
-    user_id: "",
-    salt: "",
-    key: "",
-    username: "",
-    email: "",
-    points: 1,
-    level: 1,
-    pfp: "",
-  });
-
+  const {user, updateUser, clearUser} = useUser()
   const [showMessage, SetShowMessage] = useState(false);
   const [showMessage2, SetShowMessage2] = useState(false);
 
@@ -84,12 +87,11 @@ const Dashboard = () => {
 
   const [questions, setquestoins] = useState<
     { question_id: number; title: string; votes: number }[]
-  >([
-  ]);
-  const [answers, setAnswers] = useState<
-    { id: number; question_id: number; preview: string; votes: number }[]
   >([]);
-
+  const [answers, setAnswers] = useState<answer[]>([]);
+  const [answersCurrentPage, setAnswersCurrentPage] = useState(1);
+  const answersPerPage = 5;
+  const answersTotalPages = Math.ceil(answers.length / answersPerPage);
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const questionsPerPage = 5;
@@ -110,13 +112,11 @@ const Dashboard = () => {
     }[strength as "weak" | "moderate" | "strong"] || "text-gray-500";
 
   const onUpdateEmail = async (newEmail: string) => {
-    const result = await updateEmail(user.username, newEmail, apikey);
+    if (!user?.username) return;
+    const result = await updateEmail(user?.username, newEmail, apikey);
     SetShowMessage(true);
     updateUserStorageField("email", newEmail);
-    setUser((prev) => ({
-      ...prev,
-      email: newEmail,
-    }));
+    updateUser({"email": newEmail})
     setEmail("");
     console.log(result);
     return result;
@@ -124,14 +124,10 @@ const Dashboard = () => {
 
   const onUpdatePassword = async (newPassword: string) => {
     if (strength != "weak") {
+      if (!user?.username) return;
       const result = await updatepassword(user.username, newPassword, apikey);
       SetShowMessage2(true);
-      setUser((prev) => ({
-        ...prev,
-        password: newPassword,
-      }));
       setPassword("");
-      console.log(result);
       return result;
     } else {
       console.log("password is too weak");
@@ -139,40 +135,23 @@ const Dashboard = () => {
   };
 
   const onDeleteAccount = async () => {
-    const result = await deleteAccount(user.username, apikey);
+    if (!user?.username) return;
+    await deleteAccount(user.username, apikey);
+    clearUser()
     console.log("Account Deleted");
     window.location.href = "/";
-    localStorage.clear();
-    sessionStorage.clear();
-    console.log(result);
   };
-
   useEffect(() => {
-    const localUser = getUserLocal();
-    if (localUser) {
-      setUser({
-        user_id: localUser?.user_id,
-        salt: localUser.salt,
-        key: localUser.key,
-        username: localUser.username,
-        email: localUser.email,
-        points: localUser.points,
-        level: localUser.level,
-        pfp: "",
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!user.username) return;
+    if (!user?.username) return;
     const fetchQuestions = async () => {
       const result = await getquestions(user.username, apikey);
       const answersResult = await getanswers(user.username, apikey);
       setquestoins([...questions, ...result.questions]);
-      setAnswers([...answers, ...answersResult.answers]);
+      setAnswers(answersResult.answers);
+      console.log(answers);
     };
     fetchQuestions();
-  }, [user.username]);
+  }, [user?.username]);
 
   const totalPages = Math.ceil(questions.length / questionsPerPage);
 
@@ -182,13 +161,13 @@ const Dashboard = () => {
         <CardContent>
           <div className="flex items-center gap-4">
             <img
-              src={user.pfp}
+              src={user?.pfp}
               alt="Profile"
               className="w-16 h-16 rounded-full"
             />
             <div>
-              <h2 className="text-xl font-bold">{user.username}</h2>
-              <p className="text-gray-500">{user.email}</p>
+              <h2 className="text-xl font-bold">{user?.username}</h2>
+              <p className="text-gray-500">{user?.email}</p>
             </div>
           </div>
         </CardContent>
@@ -217,7 +196,9 @@ const Dashboard = () => {
                       <div
                         key={q.question_id}
                         className="p-2 rounded hover:bg-gray-100 cursor-pointer flex justify-between items-center transition-all duration-250 ease-linear"
-                        onClick={() => (window.location.href = `/question/${q.question_id}`)}
+                        onClick={() =>
+                          (window.location.href = `/question/${q.question_id}`)
+                        }
                       >
                         <span className="text-[17px]">{q.title}</span>
                         <span className="text-sm text-gray-500">
@@ -262,21 +243,67 @@ const Dashboard = () => {
       {/* Your Answers */}
       <Card style="">
         <CardContent>
-          <h3 className="text-lg font-semibold mb-2">Your Answers</h3>
-          <div className="space-y-2">
+          <h3 className="text-lg font-semibold mb-4">Your Answers</h3>
+          <div className="space-y-2 relative">
             {answers.length > 0 ? (
-              answers.map((a) => (
-                <div
-                  key={a.id}
-                  className="p-2 rounded hover:bg-gray-100 cursor-pointer flex justify-between items-center duration-250 ease-linear"
-                  onClick={() => (window.location.href = `/qa/${a.question_id}`)}
+              <>
+                <motion.div
+                  key={answersCurrentPage}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-2"
                 >
-                  <span className="text-[17px]">{a.preview}</span>
-                  <span className="text-sm text-gray-500">
-                    Votes: {a.votes}
+                  {answers
+                    .slice(
+                      (answersCurrentPage - 1) * answersPerPage,
+                      answersCurrentPage * answersPerPage
+                    )
+                    .map((a) => (
+                      <div
+                        key={a.answer_id}
+                        className="p-2 rounded hover:bg-gray-100 cursor-pointer flex justify-between items-center transition-all duration-250 ease-linear"
+                        onClick={() =>
+                          (window.location.href = `/question/${
+                            a.question_id || a.question_id
+                          }`)
+                        }
+                      >
+                        <span>{a.text}</span>
+                        <span className="text-sm text-gray-500">
+                          Votes: {a.upvotes - a.downvotes}
+                        </span>
+                      </div>
+                    ))}
+                </motion.div>
+
+                {/* Pagination Controls */}
+                <div className="flex justify-center items-center mt-4 gap-2">
+                  <button
+                    onClick={() =>
+                      setAnswersCurrentPage((p) => Math.max(1, p - 1))
+                    }
+                    disabled={answersCurrentPage === 1}
+                    className="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 transition disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm text-gray-600">
+                    Page {answersCurrentPage} of {answersTotalPages}
                   </span>
+                  <button
+                    onClick={() =>
+                      setAnswersCurrentPage((p) =>
+                        Math.min(answersTotalPages, p + 1)
+                      )
+                    }
+                    disabled={answersCurrentPage === answersTotalPages}
+                    className="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 transition disabled:opacity-50"
+                  >
+                    Next
+                  </button>
                 </div>
-              ))
+              </>
             ) : (
               <p className="text-gray-500">
                 You have not answered any questions yet.
