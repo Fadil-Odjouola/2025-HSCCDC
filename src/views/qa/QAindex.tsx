@@ -16,6 +16,7 @@ import MarkdownRenderer from "./markdown";
 import { PaginatedAnswers } from "./paginated";
 import PaginatedComments from "./paginatedComments";
 import { getUserLocal } from "@/components/backendUserLocal";
+import { useUser } from "@/context/UserContext";
 
 dayjs.extend(relativeTime);
 const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
@@ -77,16 +78,17 @@ export default function QA() {
   const [preview, setPreview] = useState(false);
   const [creatorLevel, setCreatorLevel] = useState(0);
   const [isError, setIsError] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [isErrorComments, setIsErrorComments] = useState(false);
+  const [isErrorQuestion, SetIsErrorQuestoin] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [localUsername, setLocalUsername] = useState("");
+  const { user, updateUser } = useUser();
   const [answerError, setanswerError] = useState({
     showmessage: false,
     showError: false,
     message: "",
   });
-
   const { questionid } = useParams<string>();
   const [question, setQuestoin] = useState<Question>({
     creator: "",
@@ -123,6 +125,8 @@ export default function QA() {
           showmessage: true,
           message: "Answer created succesfully",
         });
+        if (!user?.points) return;
+        updateUser({ points: user.points + 2 });
       } else {
         setanswerError({
           showError: true,
@@ -142,42 +146,42 @@ export default function QA() {
 
   useEffect(() => {
     const fetchQuestionsAndAnswers = async () => {
+      if (!questionid) return;
       // First: fetch question (no loading/error state here)
       const result = await getQAquestion(questionid, apikey);
-
-      setQuestoin({
-        creator: result.question.creator,
-        title: result.question.title,
-        createdAt: result.question.createdAt,
-        text: result.question.text,
-        status: result.question.status,
-        hasAcceptedAnswer: result.question.hasAcceptedAnswer,
-        upvotes: result.question.upvotes,
-        downvotes: result.question.downvotes,
-        answers: result.question.answers,
-        views: result.question.views,
-        comments: result.question.comments,
-        question_id: result.question.question_id,
-        acceptedAnswerId: result.question.acceptedAnswerId,
-      });
+      SetIsErrorQuestoin(false);
+      if (result.success) {
+        setQuestoin({
+          creator: result.question.creator,
+          title: result.question.title,
+          createdAt: result.question.createdAt,
+          text: result.question.text,
+          status: result.question.status,
+          hasAcceptedAnswer: result.question.hasAcceptedAnswer,
+          upvotes: result.question.upvotes,
+          downvotes: result.question.downvotes,
+          answers: result.question.answers,
+          views: result.question.views,
+          comments: result.question.comments,
+          question_id: result.question.question_id,
+          acceptedAnswerId: result.question.acceptedAnswerId,
+        });
+      } else {
+        setIsError(true);
+        console.log(result.error);
+      }
 
       // Then: fetch answers (with loading and error)
       setIsLoading(true);
       setIsError(false);
 
-      try {
-        const result2 = await getQAanswers(questionid, apikey);
-
-        if (result2.success) {
-          setanswers(result2.answers);
-        } else {
-          setIsError(true);
-        }
-      } catch (error) {
-        console.error("Error loading answers:", error);
-        setIsError(true);
-      } finally {
+      const result2 = await getQAanswers(questionid, apikey);
+      if (result2.success) {
+        setanswers(result2.answers);
         setIsLoading(false);
+      } else {
+        setIsError(true);
+        console.log(result2.error);
       }
 
       setIsLoadingComments(true);
@@ -210,7 +214,7 @@ export default function QA() {
       setCreatorLevel(result);
     };
     creator();
-  }, [question]);
+  }, [question.creator]); // ✅ fix
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6 mt-20 ">
@@ -257,13 +261,15 @@ export default function QA() {
         </div>
         <h2 className="text-lg font-semibold mt-2: mb-1">Answers: </h2>
         <div>
-          {answers && answers.length > 0 ? (
+          {answers.length > 0 ? (
             <PaginatedAnswers
               answers={answers}
               isError={isError}
               isLoading={isLoading}
             />
-          ) : null}
+          ) : (
+            <div className="text-center  text-gray-500">No Answers yet.</div>
+          )}
         </div>
         <div className="mt-4 space-y-2">
           <div className="flex flex-row items-center justify-between gap-5 h-max">
@@ -284,6 +290,7 @@ export default function QA() {
         </div>
         {answerError.showError && (
           <div className="mt-4 px-4 py-2 rounded-lg bg-red-50 border border-red-400 text-red-700 text-center shadow transition-all duration-300 mb-5">
+            hello
             {answerError.message}
           </div>
         )}

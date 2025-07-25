@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { Question } from "@/types/questions";
 import { fetchQuestions } from "@/api/questions";
 import { useSearch } from "@/context/SearchContext";
@@ -6,8 +6,9 @@ import { searchQuestions } from "@/utility/searchQuestions";
 import { Button } from "@/components/miniUI/button";
 import Popover from "./extra/Popover";
 import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
 import { getUserLocal } from "@/components/backendUserLocal";
+import { useUser } from "@/context/UserContext";
+import level from "@/api/levelSys";
 
 
 type SortType = "recent" | "best" | "interesting" | "hot";
@@ -39,7 +40,7 @@ function QuestionCard({ question }: { question: Question }) {
           <span className="text-[16px]">
             <span className="font-bold">Comments:</span> {question.comments}
           </span>
-            <span className="text-[16px]">
+          <span className="text-[16px]">
             <span className="font-bold">Answers:</span> {question.answers}
           </span>
           <span className="text-[16px]">
@@ -64,6 +65,7 @@ export default function Buffet() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoggedin, setLoggedIn] = useState(false);
   const { searchQuery } = useSearch();
+  const { user, } = useUser();
 
   const filteredQuestions = searchQuestions(questions, searchQuery);
   const currentQuestions = filteredQuestions
@@ -103,6 +105,7 @@ export default function Buffet() {
       setLoggedIn(true);
     }
   }, []);
+
 
   if (isLoading) {
     return (

@@ -1,12 +1,16 @@
-import React, { useState } from "react";
+import React, { useState , useEffect} from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { motion, AnimatePresence } from "framer-motion";
 import MarkdownRenderer from "./markdown";
+import level from "@/api/levelSys";
+import { getuserobj } from "../auth/signup/backendauth";
+
+
+const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
 
 const PAGE_SIZE = 3;
 dayjs.extend(relativeTime);
-
 interface Answer {
   answer_id: string;
   creator: string;
@@ -28,6 +32,7 @@ export const PaginatedAnswers = ({
   isError = false,
 }: PaginatedAnswersProps) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [commenterLevels, setCommenterLevels] = useState<Record<string, number>>({});
 
   const totalPages = Math.ceil(answers.length / PAGE_SIZE);
   const paginatedAnswers = answers.slice(
@@ -53,6 +58,31 @@ export const PaginatedAnswers = ({
         pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages);
       }
     }
+
+    const getLevel = async (creator: string) => {
+        const userinfo = await getuserobj(creator, apikey)
+        return level(userinfo.points)
+    }
+
+    useEffect(() => {
+  const fetchLevels = async () => {
+    const levelsMap: Record<string, number> = {};
+    for (const answer of answers) {
+      const username = answer.creator;
+      if (!(username in levelsMap)) {
+        const userinfo = await getuserobj(username, apikey)
+        console.log(userinfo)
+        const lvl = level(userinfo.user.points);
+        levelsMap[username] = lvl;
+      }
+    }
+
+    setCommenterLevels(levelsMap);
+  };
+
+  if (answers.length > 0) fetchLevels();
+}, [answers]);
+
 
     return (
       <div className="hidden sm:flex gap-2">
@@ -123,7 +153,7 @@ export const PaginatedAnswers = ({
                     alt={answer.creator}
                     className="w-6 h-6 rounded-full"
                   />
-                  <span>{answer.creator}:</span>
+                  <span>{answer.creator} <br/> Level: {commenterLevels[answer.creator]}</span>
                 </div>
                 <div>
                   {dayjs(answer.createdAt).format("M/D/YYYY")} -{" "}

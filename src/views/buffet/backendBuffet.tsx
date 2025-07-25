@@ -1,5 +1,5 @@
 export async function createQuestion(
-  username: string,
+  username: string | undefined,
   title: string,
   text: string,
   apikey: string

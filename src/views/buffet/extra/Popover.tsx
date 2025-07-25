@@ -3,7 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import MarkdownPreview from "@/components/miniUI/MarkdownPreview";
 import { createQuestion } from "../backendBuffet";
 import type UserLocal from "@/types/userlocal";
-import updateUserStorageField, { getUserLocal } from "@/components/backendUserLocal";
+import updateUserStorageField, {
+  getUserLocal,
+} from "@/components/backendUserLocal";
+import { useUser } from "@/context/UserContext";
+import level from "@/api/levelSys";
 
 interface PopoverProps {
   onClose: () => void;
@@ -50,32 +54,7 @@ const Popover: React.FC<PopoverProps> = ({ onClose }) => {
   const [text, setText] = useState("");
   const [showMessage, setShowMessage] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const [user, setUser] = useState<UserLocal>({
-    user_id: "",
-    salt: "",
-    key: "",
-    username: "",
-    email: "",
-    points: 1,
-    level: 1,
-    pfp: "",
-  });
-
-  useEffect(() => {
-    const localUser = getUserLocal();
-    if (localUser) {
-      setUser({
-        user_id: localUser?.user_id,
-        salt: localUser.salt,
-        key: localUser.key,
-        username: localUser.username,
-        email: localUser.email,
-        points: localUser.points,
-        level: localUser.level,
-        pfp: "",
-      });
-    }
-  }, []);
+  const { user, updateUser } = useUser();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -88,15 +67,20 @@ const Popover: React.FC<PopoverProps> = ({ onClose }) => {
   }, [onClose]);
 
   const handleCreate = async () => {
-    const result = await createQuestion(user.username, title, text, apikey);
-    console.log(result)
+    const result = await createQuestion(user?.username, title, text, apikey);
+    console.log(result);
     setShowMessage(true);
     onClose();
-    updateUserStorageField("points", user.points+1)
+    if (!user) return;
+    const newPoint = user.points + 1;
+    updateUser({ points: newPoint });
+    updateUserStorageField("points", user.points + 1);
   };
 
   const insertText = (before: string, after: string = "") => {
-    const textarea = document.getElementById("markdown-text") as HTMLTextAreaElement;
+    const textarea = document.getElementById(
+      "markdown-text"
+    ) as HTMLTextAreaElement;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
@@ -118,7 +102,6 @@ const Popover: React.FC<PopoverProps> = ({ onClose }) => {
       textarea.selectionEnd = end + before.length;
     }, 0);
   };
-
   return (
     <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4">
       <AnimatePresence>
@@ -190,14 +173,14 @@ const Popover: React.FC<PopoverProps> = ({ onClose }) => {
             <MarkdownPreview content={`# ${title}\n\n${text}`} />
           </div>
         </motion.div>
-        {showMessage && (
-          <MailSentMessage
-            duration={2500}
-            onFadeOut={() => setShowMessage(false)}
-            message="Question created successfully, You gained 1 point!"
-          />
-        )}
       </AnimatePresence>
+      {showMessage && (
+        <MailSentMessage
+          duration={2500}
+          onFadeOut={() => setShowMessage(false)}
+          message="Question created successfully, You gained 1 point!"
+        />
+      )}
     </div>
   );
 };

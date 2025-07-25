@@ -3,6 +3,8 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { motion, AnimatePresence } from "framer-motion";
 import MarkdownRenderer from "./markdown"; // Optional: replace with your own Markdown or plain <p> renderer
+import level from "@/api/levelSys";
+
 
 dayjs.extend(relativeTime);
 
@@ -140,7 +142,7 @@ const PaginatedComments: React.FC<PaginatedCommentsProps> = ({
                     alt={comment.creator}
                     className="w-6 h-6 rounded-full object-cover"
                   />
-                  <span className="font-medium">{comment.creator}</span>
+                  <span className="font-medium">{comment.creator} </span>
                 </div>
                 <div className="text-xs text-gray-500 flex flex-row gap-3 translate-x-30">
                   {dayjs(comment.createdAt).format("MMM D, YYYY")} |{" "}

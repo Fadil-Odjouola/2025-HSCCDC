@@ -8,9 +8,9 @@ import {
   getanswers,
   updateEmail,
   updatepassword,
-  deleteAccount
+  deleteAccount,
 } from "./backendDashboard";
-
+import { motion } from "framer-motion";
 
 const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
 
@@ -75,37 +75,31 @@ const Dashboard = () => {
     level: 1,
     pfp: "",
   });
+
   const [showMessage, SetShowMessage] = useState(false);
   const [showMessage2, SetShowMessage2] = useState(false);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const [questions, setquestoins] = useState<
+    { question_id: number; title: string; votes: number }[]
+  >([
+  ]);
+  const [answers, setAnswers] = useState<
+    { id: number; question_id: number; preview: string; votes: number }[]
+  >([]);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const questionsPerPage = 5;
+
   const getStrength = (pwd: string) => {
     if (pwd.length > 17) return "strong";
     if (pwd.length >= 11) return "moderate";
     if (pwd.length > 0) return "weak";
     return "";
   };
-
-  const [questions, setquestoins] = useState([
-    { id: 1, title: "How do I use React Hooks?", votes: 12 },
-    { id: 2, title: "What's new in Next.js 14?", votes: 8 },
-  ]);
-
-  const [answers, setAnswers] = useState([
-    {
-      id: 1,
-      questionId: 1,
-      preview: "You can use useState and useEffect...",
-      votes: 5,
-    },
-    {
-      id: 2,
-      questionId: 2,
-      preview: "Next.js 14 introduces new app routing...",
-      votes: 3,
-    },
-  ]);
 
   const strength = getStrength(password);
   const strengthStyle =
@@ -118,14 +112,12 @@ const Dashboard = () => {
   const onUpdateEmail = async (newEmail: string) => {
     const result = await updateEmail(user.username, newEmail, apikey);
     SetShowMessage(true);
-
     updateUserStorageField("email", newEmail);
-
     setUser((prev) => ({
       ...prev,
       email: newEmail,
     }));
-    setEmail("")
+    setEmail("");
     console.log(result);
     return result;
   };
@@ -138,26 +130,26 @@ const Dashboard = () => {
         ...prev,
         password: newPassword,
       }));
-      setPassword("")
+      setPassword("");
       console.log(result);
-      return result; 
+      return result;
     } else {
-      console.log("password is too weak")
+      console.log("password is too weak");
     }
   };
 
   const onDeleteAccount = async () => {
-    const result  = await deleteAccount(user.username, apikey)
-    console.log("Account Deleted")
-    window.location.href = "/"
-    localStorage.clear()
-    sessionStorage.clear()
-    console.log(result)
+    const result = await deleteAccount(user.username, apikey);
+    console.log("Account Deleted");
+    window.location.href = "/";
+    localStorage.clear();
+    sessionStorage.clear();
+    console.log(result);
   };
+
   useEffect(() => {
     const localUser = getUserLocal();
     if (localUser) {
-      console.log(localUser);
       setUser({
         user_id: localUser?.user_id,
         salt: localUser.salt,
@@ -174,15 +166,15 @@ const Dashboard = () => {
   useEffect(() => {
     if (!user.username) return;
     const fetchQuestions = async () => {
-      console.log(user.username);
       const result = await getquestions(user.username, apikey);
       const answersResult = await getanswers(user.username, apikey);
       setquestoins([...questions, ...result.questions]);
       setAnswers([...answers, ...answersResult.answers]);
-      console.log(result);
     };
     fetchQuestions();
   }, [user.username]);
+
+  const totalPages = Math.ceil(questions.length / questionsPerPage);
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6 pt-20">
@@ -202,23 +194,62 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
+      {/* Your Questions - with pagination */}
       <Card style="">
         <CardContent>
-          <h3 className="text-lg font-semibold mb-2">Your Questions</h3>
-          <div className="space-y-2">
+          <h3 className="text-lg font-semibold mb-4">Your Questions</h3>
+          <div className="space-y-2 relative">
             {questions.length > 0 ? (
-              questions.map((q) => (
-                <div
-                  key={q.id}
-                  className="p-2 rounded hover:bg-gray-100 cursor-pointer flex justify-between items-center transition-all duration-250 ease-linear"
-                  onClick={() => (window.location.href = `/qa/${q.id}`)}
+              <>
+                <motion.div
+                  key={currentPage}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-2"
                 >
-                  <span className="text-[17px]">{q.title}</span>
-                  <span className="text-sm text-gray-500">
-                    Votes: {q.votes}
+                  {questions
+                    .slice(
+                      (currentPage - 1) * questionsPerPage,
+                      currentPage * questionsPerPage
+                    )
+                    .map((q) => (
+                      <div
+                        key={q.question_id}
+                        className="p-2 rounded hover:bg-gray-100 cursor-pointer flex justify-between items-center transition-all duration-250 ease-linear"
+                        onClick={() => (window.location.href = `/question/${q.question_id}`)}
+                      >
+                        <span className="text-[17px]">{q.title}</span>
+                        <span className="text-sm text-gray-500">
+                          Votes: {q.votes}
+                        </span>
+                      </div>
+                    ))}
+                </motion.div>
+
+                {/* Pagination Controls */}
+                <div className="flex justify-center items-center mt-4 gap-2">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 transition disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm text-gray-600">
+                    Page {currentPage} of {totalPages}
                   </span>
+                  <button
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 transition disabled:opacity-50"
+                  >
+                    Next
+                  </button>
                 </div>
-              ))
+              </>
             ) : (
               <p className="text-gray-500">
                 You have not asked any questions yet.
@@ -228,6 +259,7 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
+      {/* Your Answers */}
       <Card style="">
         <CardContent>
           <h3 className="text-lg font-semibold mb-2">Your Answers</h3>
@@ -237,7 +269,7 @@ const Dashboard = () => {
                 <div
                   key={a.id}
                   className="p-2 rounded hover:bg-gray-100 cursor-pointer flex justify-between items-center duration-250 ease-linear"
-                  onClick={() => (window.location.href = `/qa/${a.questionId}`)}
+                  onClick={() => (window.location.href = `/qa/${a.question_id}`)}
                 >
                   <span className="text-[17px]">{a.preview}</span>
                   <span className="text-sm text-gray-500">
@@ -254,6 +286,7 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
+      {/* Account Settings */}
       <Card style="">
         <CardContent>
           <h3 className="text-lg font-semibold">Account Settings</h3>
@@ -280,9 +313,10 @@ const Dashboard = () => {
             <MailSentMessage
               duration={2500}
               onFadeOut={() => SetShowMessage(false)}
-              message="Email updated succesfully"
+              message="Email updated successfully"
             />
           )}
+
           <div className="mt-4 flex flex-col ">
             <label className="block text-sm font-medium mb-1">
               Change Password
@@ -311,7 +345,7 @@ const Dashboard = () => {
             </div>
             {strength && (
               <span
-                className={` translate-y-2 text-sm font-medium w-max h-max p-3 border-2 transition-all duration-300 rounded-2xl  ${strengthStyle} `}
+                className={`translate-y-2 text-sm font-medium w-max h-max p-3 border-2 transition-all duration-300 rounded-2xl ${strengthStyle}`}
               >
                 {strength === "weak" &&
                   "Weak password (must be > 10 characters), WON'T BE ACCEPTED"}
@@ -324,7 +358,7 @@ const Dashboard = () => {
             <MailSentMessage
               duration={2500}
               onFadeOut={() => SetShowMessage2(false)}
-              message="Password updated succesfully"
+              message="Password updated successfully"
             />
           )}
           <div className="mt-4">

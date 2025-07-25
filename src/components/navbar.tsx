@@ -6,6 +6,8 @@ import updateUserStorageField, { getUserLocal } from "./backendUserLocal";
 import type UserLocal from "@/types/userlocal";
 import { useSearch } from "@/context/SearchContext";
 import level from "@/api/levelSys";
+import { useUser } from "@/context/UserContext";
+
 
 const hashEmail = async (email: string): Promise<string> => {
   const cleanedEmail = email.trim().toLowerCase();
@@ -22,7 +24,8 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { setSearchQuery } = useSearch();
-  const [user, setUser] = useState<UserLocal>({
+  const {user, updateUser} = useUser();
+  const [userl, setUser] = useState<UserLocal>({
     user_id: "",
     salt: "",
     key: "",
@@ -63,13 +66,13 @@ export default function Navbar() {
 
   // Hash email when user.email changes
   useEffect(() => {
-    if (!user.email) return;
+    if (!userl.email) return;
     const fetchHash = async () => {
-      const result = await hashEmail(user.email);
+      const result = await hashEmail(userl.email);
       setHashedMail(result);
     };
     fetchHash();
-  }, [user.email]);
+  }, [userl.email]);
 
   const logout = () => {
     setIsLoggedIn(false);
@@ -89,9 +92,18 @@ export default function Navbar() {
     }
   };
   useEffect(() => {
-    const userLevel = level(user.points);
+    const userLevel = level(userl.points);
     updateUserStorageField("level", userLevel);
-  }, [user]);
+  }, [userl]);
+
+   useEffect(() => {
+    const changeLevel = async () => {
+      if (!user?.points) return;
+      const newLevel = level(user.points);
+      updateUser({ level: newLevel });
+    };
+    changeLevel();
+  }, [user?.points]);
   return (
     <nav
       className={`
@@ -193,7 +205,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-300 shadow hover:shadow-md transition-all duration-200 hover:bg-gray-100 translate-x-3">
                   <span className="font-medium text-gray-700">Level:</span>
                   <span className="font-semibold text-gray-900">
-                    {user.level}
+                    {user?.level}
                   </span>
                 </div>
 
@@ -207,10 +219,10 @@ export default function Navbar() {
                     <img
                       className="w-7 h-7 rounded-full"
                       src={`https://gravatar.com/avatar/${hashedemail}`}
-                      alt={`${user.username}'s avatar`}
+                      alt={`${userl.username}'s avatar`}
                     />
                     <span className="font-medium text-gray-700">
-                      {user.username}
+                      {user?.username}
                     </span>
                   </button>
                   <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
@@ -243,7 +255,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-300 shadow hover:shadow-md transition-all duration-200 hover:bg-gray-100 -translate-x-3">
                   <span className="font-medium text-gray-700">Points:</span>
                   <span className="font-semibold text-gray-900">
-                    {user.points}
+                    {user?.points}
                   </span>
                 </div>
               </>
