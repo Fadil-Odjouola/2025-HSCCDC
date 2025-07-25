@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Menu, X, Search, Bell, User } from "lucide-react";
+import { Menu, X, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./miniUI/button";
-import { getUserLocal } from "./backendUserLocal";
+import updateUserStorageField, { getUserLocal } from "./backendUserLocal";
 import type UserLocal from "@/types/userlocal";
 import { useSearch } from "@/context/SearchContext";
+import level from "@/api/levelSys";
 
 const hashEmail = async (email: string): Promise<string> => {
   const cleanedEmail = email.trim().toLowerCase();
@@ -76,7 +77,21 @@ export default function Navbar() {
     sessionStorage.clear();
     window.location.href = "/";
   };
-
+  const handleKeyDown = (e:any) => {
+    if (e.key === "Enter") {
+      if (window.location.href !== "/") {
+        // Go to "/" and pass query
+        window.location.href == "/";
+      } else {
+        // Already on "/", update query
+        window.location.href == "/";
+      }
+    }
+  };
+  useEffect(() => {
+    const userLevel = level(user.points);
+    updateUserStorageField("level", userLevel);
+  }, [user]);
   return (
     <nav
       className={`
@@ -116,7 +131,10 @@ export default function Navbar() {
                 aria-label="Toggle Search Input"
                 className="hover:bg-gray-100 w-max pr-2 pl-2 h-10 flex justify-center items-center rounded-lg transition-all duration-200 ease-linear cursor-pointer"
               >
-                <Search className="w-6 h-6" />
+                <Search
+                  onKeyDown={(e) => handleKeyDown(e)}
+                  className="w-6 h-6"
+                />
               </button>
               <div className="w-max h-max p-2">
                 <input

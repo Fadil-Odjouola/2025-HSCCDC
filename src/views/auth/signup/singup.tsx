@@ -334,7 +334,7 @@ export default function Signup() {
             <div className="px-3 py-1 mb-2 rounded-2xl border border-gray-300 text-gray-700 text-lg shadow-sm bg-white text-center">
               {tries} / 3 tries remaining
             </div>
-            <ForgotPassword username={user.username}/>
+            <ForgotPassword/>
             <button
               type="submit"
               disabled={isLocked}

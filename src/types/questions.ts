@@ -10,7 +10,7 @@ export interface Question {
     answers: number;
     views: number;
     comments: number;
-    question_id: number;
+    question_id: "";
     acceptedAnswerId: boolean
 }
 

@@ -45,9 +45,10 @@ const MailSentMessage: React.FC<MailSentMessageProps> = ({
   );
 };
 
-export default function ForgotPassword({ username }: ForgotPasswordProps) {
+export default function ForgotPassword() {
   const [isOpen, setIsOpen] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [showMessage, setShowMessage] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -87,12 +88,13 @@ export default function ForgotPassword({ username }: ForgotPasswordProps) {
     if (!newPassword) return alert("Password cannot be empty.");
     // TODO: Replace with your password update logic (API call)
     if (strength != "weak") {
-      console.log("Password changed to:", newPassword);
+      console.log("Password change, Email sent")
       const result = await updatepassword(username, newPassword, apikey);
       console.log(result);
       setShowMessage(true);
       setIsOpen(false);
       setNewPassword("");
+      setUsername("")
       return result;
     } else {
       console.log("Password is too weak");
@@ -137,6 +139,13 @@ export default function ForgotPassword({ username }: ForgotPasswordProps) {
                 Reset Password
               </h2>
               <div className="flex flex-col space-y-4">
+                <input
+                  type="text"
+                  placeholder="Enter username"
+                  className={`px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 {strengthStyle}`}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
                 <input
                   type="password"
                   placeholder="Enter new password"

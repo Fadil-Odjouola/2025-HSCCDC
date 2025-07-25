@@ -9,7 +9,6 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { getUserLocal } from "@/components/backendUserLocal";
 
-dayjs.extend(relativeTime);
 
 type SortType = "recent" | "best" | "interesting" | "hot";
 
@@ -22,7 +21,7 @@ const sortMap: Record<Exclude<SortType, "recent">, "u" | "uvc" | "uvac"> = {
 function QuestionCard({ question }: { question: Question }) {
   return (
     <a
-      href={`/questions/${question.question_id}`}
+      href={`/question/${question.question_id}`}
       className="w-full sm:w-[48%] lg:w-[31%]"
     >
       <div className="rounded-2xl border p-4 hover:shadow-lg transition-all duration-300 bg-white mb-3 h-full">
@@ -39,6 +38,9 @@ function QuestionCard({ question }: { question: Question }) {
           </span>
           <span className="text-[16px]">
             <span className="font-bold">Comments:</span> {question.comments}
+          </span>
+            <span className="text-[16px]">
+            <span className="font-bold">Answers:</span> {question.answers}
           </span>
           <span className="text-[16px]">
             <span className="font-bold">Creator:</span> {question.creator}

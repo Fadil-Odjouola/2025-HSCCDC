@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import MarkdownPreview from "@/components/miniUI/MarkdownPreview";
 import { createQuestion } from "../backendBuffet";
 import type UserLocal from "@/types/userlocal";
-import { getUserLocal } from "@/components/backendUserLocal";
+import updateUserStorageField, { getUserLocal } from "@/components/backendUserLocal";
 
 interface PopoverProps {
   onClose: () => void;
@@ -92,6 +92,7 @@ const Popover: React.FC<PopoverProps> = ({ onClose }) => {
     console.log(result)
     setShowMessage(true);
     onClose();
+    updateUserStorageField("points", user.points+1)
   };
 
   const insertText = (before: string, after: string = "") => {
@@ -193,7 +194,7 @@ const Popover: React.FC<PopoverProps> = ({ onClose }) => {
           <MailSentMessage
             duration={2500}
             onFadeOut={() => setShowMessage(false)}
-            message="Question created successfully"
+            message="Question created successfully, You gained 1 point!"
           />
         )}
       </AnimatePresence>

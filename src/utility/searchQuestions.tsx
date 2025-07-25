@@ -1,7 +1,7 @@
 import type { Question } from "@/types/questions";
 
 export const searchQuestions = (questions: Question[], query: string): Question[] => {
-  if (!query.trim()) return [...questions].sort((a, b) => new Date(b.createAt).getTime() - new Date(a.createAt).getTime());
+  if (!query.trim()) return [...questions].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const lowerQuery = query.toLowerCase();
 
@@ -11,5 +11,5 @@ export const searchQuestions = (questions: Question[], query: string): Question[
       q.text.toLowerCase().includes(lowerQuery) ||
       q.creator.toLowerCase().includes(lowerQuery) 
     )
-    .sort((a, b) => new Date(b.createAt).getTime() - new Date(a.createAt).getTime());
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 };
