@@ -1,0 +1,16 @@
+export interface Question {
+    creator: string;
+    title: string;
+    createdAt: number;
+    text: string;
+    status: string;
+    hasAcceptedAnswer: boolean;
+    upvotes: number;
+    downvotes: number;
+    answers: number;
+    views: number;
+    comments: number;
+    question_id: "";
+    acceptedAnswerId: boolean
+}
+

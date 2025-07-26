@@ -1,45 +1,31 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import {
-  createBrowserRouter,
-  RouterProvider,
-} from "react-router";
-import Buffet from "./views/buffet";
-import Auth from "./views/auth";
-import QA from "./views/qa";
-import Mail from "./views/mail";
-import Dashboard from "./views/dashboard";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-let router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Buffet></Buffet>,
-    //loader: loadRootData,
-  },
-  {
-    path: "/Auth",
-    element: <Auth></Auth>,
-    //loader: loadRootData,
-  },
-  {
-    path: "/QA",
-    element: <QA></QA>,
-    //loader: loadRootData,
-  },
-  {
-    path: "/Mail",
-    element: <Mail></Mail>,
-    //loader: loadRootData,
-  },
-  {
-    path: "/Dashboard",
-    element: <Dashboard></Dashboard>,
-    //loader: loadRootData,
-  },
-]);
+import "./index.css";
+import Navbar from "./components/navbar";
+import Signup from "./views/auth/signup/singup";
+import Buffet from "@/views/buffet/buffet";
+import Mail from "./views/mail/indexMail";
+import { SearchProvider } from "@/context/SearchContext";
+import Dashboard from "./views/dashboard/indexDashboard";
+//import QuestionPage from "@/views/questions/QuestionPage"; // <-- make sure this exists
+import QA from "./views/qa/QAindex";
+import { UserProvider } from "./context/UserContext";
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <RouterProvider router={router} />
-  </StrictMode>,
-)
+createRoot(document.getElementById("root")!).render(
+    <UserProvider>
+      <SearchProvider>
+        <BrowserRouter>
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Buffet />} />
+            <Route path="/mail" element={<Mail />} />
+            <Route path="/register" element={<Signup />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/question/:questionid" element={<QA />} />
+          </Routes>
+        </BrowserRouter>
+      </SearchProvider>
+    </UserProvider>
+);
