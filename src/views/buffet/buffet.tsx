@@ -9,6 +9,7 @@ import dayjs from "dayjs";
 import { getUserLocal } from "@/components/backendUserLocal";
 import { useUser } from "@/context/UserContext";
 import { motion } from "framer-motion";
+import giveExampleQuestions from "@/api/sampleData";
 
 
 type SortType = "recent" | "best" | "interesting" | "hot";
@@ -81,24 +82,28 @@ export default function Buffet() {
   }, [sortType]);
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        if (sortType === "recent") {
-          const response = await fetchQuestions();
-          setQuestions(response);
-        } else {
-          const response = await fetchQuestions(sortMap[sortType]);
-          setQuestions(response);
-        }
-      } catch (error: any) {
-        setError(error);
-      } finally {
-        setIsLoading(false);
+  const fetchPosts = async () => {
+    setIsLoading(true);
+    setError(null); // Clear previous errors
+    try {
+      let fetchedResponse;
+      if (sortType === "recent") {
+        fetchedResponse = await fetchQuestions();
+      } else {
+        fetchedResponse = await fetchQuestions(sortMap[sortType]);
       }
-    };
-    fetchPosts();
+      setQuestions(fetchedResponse);
+    } catch (caughtError: unknown) { // Use 'unknown' for the catch parameter
+      // Ensure caughtError is an Error object before setting it to state
+      const typedError = caughtError instanceof Error ? caughtError : new Error("An unexpected error occurred.");
+      setError(typedError);
+      // ONLY set example questions if an error occurred
+      setQuestions(giveExampleQuestions(typedError));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  fetchPosts();
   }, [sortType]);
 
   useEffect(() => {
