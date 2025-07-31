@@ -6,7 +6,7 @@ import updateUserStorageField, {
   getUserLocal,
 } from "@/components/backendUserLocal";
 import { useUser } from "@/context/UserContext";
-import { updatePoints } from "@/api/changepoints";
+import { updateUserPoints } from "@/api/changepoints";
 
 
 interface PopoverProps {
@@ -74,7 +74,7 @@ const Popover: React.FC<PopoverProps> = ({ onClose }) => {
     if (!user) return;
     const newPoint = user.points + 1;
     updateUser({ points: newPoint });
-    await updatePoints(user.username, "increment", 1)
+    await updateUserPoints(user.username, "increment", 1)
     updateUserStorageField("points", user.points + 1);
   };
 

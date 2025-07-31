@@ -96,12 +96,15 @@ const Mail = () => {
       setError(null);
       try {
         const result = await getmail(mail.sender, apikey);
-        setMessages(result.messages);
-        SetBigError(false);
+        if (result.success) {
+          setMessages(result.messages);
+          SetBigError(false);
+        }
       } catch (err) {
         console.error(err);
         SetBigError(true);
         setError("Failed to load messages. Please try again later.");
+        setLoading(false)
       } finally {
         setLoading(false);
       }
@@ -196,14 +199,13 @@ const Mail = () => {
       )}
 
       {/* Error */}
-      {error && (
-        <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4 text-center">
-          {error}
-        </div>
-      )}
 
       {/* Messages */}
-      {!loading && !error && (
+      {bigerror ? (
+        <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4 text-center">
+          yes
+        </div>
+      ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
           {messages.map((msg) => (
             <MessageCard key={msg.mail_id} message={msg} />

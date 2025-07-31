@@ -98,17 +98,18 @@ export default function Signup() {
 
   const getuserinfo = async (username: string, password: string) => {
     const data = await getuserobj(username, apikey);
-    const salt = data.user.salt;
+    const salt = data.salt;
     const key = await deriveKeyWithSalt(password, salt);
+    console.log(data)
     const newUser = {
-      username: data.user.username,
-      email: data.user.email,
+      username: data.username,
+      email: data.email,
       password: password,
       salt: salt,
       key: key.key,
-      answers: data.user.answers,
-      points: data.user.points,
-      questions: data.user.questions,
+      answers: data.answers,
+      points: data.points,
+      questions: data .questions,
     };
     setUser(newUser);
     return newUser;
@@ -139,9 +140,11 @@ export default function Signup() {
         window.location.href = "/";
       } else {
         decrementTries();
+        console.log(status)
       }
     } catch (err) {
       decrementTries();
+      console.log(err)
     }
   };
 

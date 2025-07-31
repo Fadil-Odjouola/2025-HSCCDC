@@ -11,6 +11,9 @@ export interface Question {
     views: number;
     comments: number;
     question_id: "";
-    acceptedAnswerId: boolean
+    acceptedAnswerId: boolean;
+    openVotes: number | null;
+    protectedVotes: number | null;
+    closedVotes: number | null;
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import type { Question } from "@/types/questions";
 import { fetchQuestions } from "@/api/questions";
 import { useSearch } from "@/context/SearchContext";
@@ -9,17 +9,30 @@ import dayjs from "dayjs";
 import { getUserLocal } from "@/components/backendUserLocal";
 import { useUser } from "@/context/UserContext";
 import { motion } from "framer-motion";
-
+import { useUserCache } from "@/context/userCacheContext";
+import { useUsers } from "@/context/usersContext";
+import hashEmail from "@/utility/emailhash";
 
 type SortType = "recent" | "best" | "interesting" | "hot";
 
-const sortMap: Record<Exclude<SortType, "recent">, "u" | "uvc" | "uvac"> = {
+const sortMap: Record<SortType, "d" | "u" | "uvc" | "uvac"> = {
+  recent: "d",
   best: "u",
   interesting: "uvc",
   hot: "uvac",
 };
 
-function QuestionCard({ question }: { question: Question }) {
+const MAX_MATCHED = 100;
+
+function QuestionCard({
+  question,
+  hashedemail,
+  levels,
+}: {
+  question: Question;
+  hashedemail: string;
+  levels: number;
+}) {
   return (
     <motion.a
       href={`/question/${question.question_id}`}
@@ -34,23 +47,28 @@ function QuestionCard({ question }: { question: Question }) {
         </div>
         <div className="text-sm text-gray-700 flex flex-col gap-1">
           <span className="text-[16px]">
-            <span className="font-bold">Votes:</span>{" "}
-            {question.upvotes - question.downvotes}
+            <b>Votes:</b> {question.upvotes - question.downvotes}
           </span>
           <span className="text-[16px]">
-            <span className="font-bold">Views:</span> {question.views}
+            <b>Views:</b> {question.views}
           </span>
           <span className="text-[16px]">
-            <span className="font-bold">Comments:</span> {question.comments}
+            <b>Comments:</b> {question.comments}
           </span>
           <span className="text-[16px]">
-            <span className="font-bold">Answers:</span> {question.answers}
+            <b>Answers:</b> {question.answers}
           </span>
-          <span className="text-[16px]">
-            <span className="font-bold">Creator:</span> {question.creator}
+          <span className="text-[16px] flex items-center gap-2 flex-row">
+            <img
+              src={`https://gravatar.com/avatar/${hashedemail}?d=identicon`}
+              alt="avatar"
+              className="w-6 h-6 rounded-full"
+            />
+            <span className="font-bold">Creator:</span> {question.creator} |{" "}
+            {levels}
           </span>
           <span className="text-xs text-gray-500">
-            {dayjs(question.createdAt).format("M/D/YYYY")} -{" "}
+            {dayjs(question.createdAt).format("M/D/YYYY")} –{" "}
             {dayjs(question.createdAt).fromNow()}
           </span>
         </div>
@@ -61,60 +79,109 @@ function QuestionCard({ question }: { question: Question }) {
 
 export default function Buffet() {
   const [sortType, setSortType] = useState<SortType>("recent");
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [error, setError] = useState<Error | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [show, setShow] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [show, setShow] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const observerRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
   const [isLoggedin, setLoggedIn] = useState(false);
+  const lastIdRef = useRef<string | undefined>(undefined);
+
   const { searchQuery } = useSearch();
-  const { user } = useUser();
-
-  const filteredQuestions = searchQuestions(questions, searchQuery);
-  const currentQuestions = filteredQuestions
-    .slice(0, 100)
-    .slice((currentPage - 1) * 12, currentPage * 12);
-  const totalPages = Math.ceil(Math.min(filteredQuestions.length, 100) / 12);
+  const { setHashedEmails, setLevels, hashedEmail, level} = useUsers();
+  const { hashedEmails, levels, loading: usersLoading } = useUserCache();
 
   useEffect(() => {
-    setCurrentPage(1);
-  }, [sortType]);
+    if (!usersLoading) {
+      setHashedEmails(hashedEmails);
+      console.log("email hashed")
+      setLevels(levels);
+    }
+  }, [usersLoading, hashedEmails, levels]);
 
-  useEffect(() => {
-    const fetchPosts = async () => {
+  const filteredQuestions = useMemo(() => {
+    return searchQuestions(questions, searchQuery);
+  }, [questions, searchQuery]);
+
+  const filterForType = (qs: Question[]): Question[] => {
+    if (sortType === "interesting") {
+      return qs.filter((q) => !q.hasAcceptedAnswer && q.answers === 0);
+    } else if (sortType === "hot") {
+      return qs.filter((q) => !q.hasAcceptedAnswer);
+    }
+    return qs;
+  };
+
+  const fetchInitial = useCallback(async () => {
+    try {
       setIsLoading(true);
+      setQuestions([]);
+      setHasMore(true);
       setError(null);
-      try {
-        if (sortType === "recent") {
-          const response = await fetchQuestions();
-          setQuestions(response);
-        } else {
-          const response = await fetchQuestions(sortMap[sortType]);
-          setQuestions(response);
-        }
-      } catch (error: any) {
-        setError(error);
-      } finally {
-        setIsLoading(false);
+      lastIdRef.current = undefined;
+
+      const sortParam = sortMap[sortType];
+      const initial = await fetchQuestions(sortParam);
+      const filtered = filterForType(initial);
+
+      setQuestions(filtered);
+      lastIdRef.current = initial.at(-1)?.question_id;
+
+      if (filtered.length >= MAX_MATCHED || initial.length < 100) {
+        setHasMore(false);
       }
-    };
-    fetchPosts();
+    } catch (err: any) {
+      setError(err);
+    } finally {
+      setIsLoading(false);
+    }
   }, [sortType]);
+
+  const fetchMore = useCallback(async () => {
+    if (loadingRef.current || !hasMore || !lastIdRef.current) return;
+    loadingRef.current = true;
+    setIsLoading(true);
+
+    try {
+      const sortParam = sortMap[sortType];
+      const next = await fetchQuestions(sortParam, lastIdRef.current);
+      lastIdRef.current = next.at(-1)?.question_id;
+
+      const filtered = filterForType(next);
+      setQuestions((prev) => {
+        const merged = [...prev, ...filtered];
+        if (merged.length >= MAX_MATCHED || next.length < 100)
+          setHasMore(false);
+        return merged;
+      });
+    } catch (err: any) {
+      setError(err);
+    } finally {
+      loadingRef.current = false;
+      setIsLoading(false);
+    }
+  }, [sortType, hasMore]);
+
+  useEffect(() => {
+    fetchInitial();
+  }, [fetchInitial]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore && !isLoading) {
+        fetchMore();
+      }
+    });
+    if (observerRef.current) observer.observe(observerRef.current);
+    return () => observer.disconnect();
+  }, [fetchMore, hasMore, isLoading]);
 
   useEffect(() => {
     const localUser = getUserLocal();
-    if (localUser) {
-      setLoggedIn(true);
-    }
+    if (localUser) setLoggedIn(true);
   }, []);
-
-  if (isLoading) {
-    return (
-      <div className="pt-16 p-6 max-w-3xl mx-auto bg-gray-50 rounded-xl shadow-sm mt-20 text-center text-gray-700">
-        Loading questions...
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -128,10 +195,9 @@ export default function Buffet() {
     <motion.div
       initial={{ opacity: 0, y: 25 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.75}}
+      transition={{ duration: 0.75 }}
       className="pt-16 p-4 sm:p-6 max-w-screen-xl mx-auto space-y-6 bg-gray-50 rounded-xl shadow-md mt-20"
     >
-      {/* Sort and Create Button */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-y-4">
         <div className="flex flex-wrap gap-2">
           {(["recent", "best", "interesting", "hot"] as const).map((type) => (
@@ -160,46 +226,27 @@ export default function Buffet() {
 
       {show && <Popover onClose={() => setShow(false)} />}
 
-      {/* Questions */}
       <div className="flex flex-wrap gap-4 justify-start">
-        {currentQuestions.length === 0 ? (
+        {filteredQuestions.length === 0 ? (
           <div className="text-center text-gray-500 w-full">
             No questions found.
           </div>
         ) : (
-          currentQuestions.map((q) => (
-            <QuestionCard key={q.question_id} question={q} />
+          filteredQuestions.map((q) => (
+            <QuestionCard
+              key={q.question_id}
+              question={q}
+              hashedemail={hashedEmail[q.creator]}
+              levels={level[q.creator]}
+            />
           ))
         )}
       </div>
 
-      {/* Pagination */}
-      <div className="flex justify-center flex-wrap gap-1 mt-4">
-        {currentPage > 2 && <span className="px-2 select-none">...</span>}
-        {Array.from({ length: totalPages }, (_, i) => i + 1)
-          .filter(
-            (num) =>
-              num === 1 ||
-              num === totalPages ||
-              Math.abs(num - currentPage) <= 1
-          )
-          .map((num) => (
-            <button
-              key={num}
-              onClick={() => setCurrentPage(num)}
-              className={`px-3 py-1 rounded-lg border text-sm transition ${
-                num === currentPage
-                  ? "bg-gray-800 text-white border-transparent"
-                  : "bg-white text-gray-800 border-gray-300 hover:bg-gray-200"
-              }`}
-            >
-              {num}
-            </button>
-          ))}
-        {currentPage < totalPages - 1 && (
-          <span className="px-2 select-none">...</span>
-        )}
-      </div>
+      {isLoading && (
+        <div className="text-center text-gray-500 mt-4">Loading more...</div>
+      )}
+      <div ref={observerRef} className="h-10" />
     </motion.div>
   );
 }

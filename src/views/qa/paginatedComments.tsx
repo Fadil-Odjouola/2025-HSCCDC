@@ -1,10 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { motion, AnimatePresence } from "framer-motion";
-import MarkdownRenderer from "./markdown"; // Optional: replace with your own Markdown or plain <p> renderer
-import level from "@/api/levelSys";
-
+import { useUserCache } from "@/context/userCacheContext";
 
 dayjs.extend(relativeTime);
 
@@ -32,6 +30,7 @@ const PaginatedComments: React.FC<PaginatedCommentsProps> = ({
   isError = false,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const { hashedEmails, levels, loading: userCacheLoading } = useUserCache();
   const totalPages = Math.ceil(comments.length / PAGE_SIZE);
   const paginatedComments = comments.slice(
     (currentPage - 1) * PAGE_SIZE,
@@ -138,11 +137,15 @@ const PaginatedComments: React.FC<PaginatedCommentsProps> = ({
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <img
-                    src={comment.creator}
+                    src={`https://gravatar.com/avatar/${
+                      hashedEmails[comment.creator]
+                    }?d=identicon`}
                     alt={comment.creator}
                     className="w-6 h-6 rounded-full object-cover"
                   />
-                  <span className="font-medium">{comment.creator} </span>
+                  <span className="font-medium">
+                    {comment.creator} | Level: {levels[comment.creator]}
+                  </span>
                 </div>
                 <div className="text-xs text-gray-500 flex flex-row gap-3 translate-x-30">
                   {dayjs(comment.createdAt).format("MMM D, YYYY")} |{" "}
