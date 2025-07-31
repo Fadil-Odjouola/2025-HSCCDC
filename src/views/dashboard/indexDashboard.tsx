@@ -12,7 +12,7 @@ import {
 } from "./backendDashboard";
 import { motion } from "framer-motion";
 import { useUser } from "@/context/UserContext";
-
+import type { Question } from "@/types/questions";
 
 const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
 
@@ -78,16 +78,14 @@ const CardContent = ({ children }: { children: React.ReactNode }) => (
 );
 
 const Dashboard = () => {
-  const {user, updateUser, clearUser} = useUser()
+  const { user, updateUser, clearUser } = useUser();
   const [showMessage, SetShowMessage] = useState(false);
   const [showMessage2, SetShowMessage2] = useState(false);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const [questions, setquestoins] = useState<
-    { question_id: number; title: string; votes: number }[]
-  >([]);
+  const [questions, setquestoins] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<answer[]>([]);
   const [answersCurrentPage, setAnswersCurrentPage] = useState(1);
   const answersPerPage = 5;
@@ -116,7 +114,7 @@ const Dashboard = () => {
     const result = await updateEmail(user?.username, newEmail, apikey);
     SetShowMessage(true);
     updateUserStorageField("email", newEmail);
-    updateUser({"email": newEmail})
+    updateUser({ email: newEmail });
     setEmail("");
     console.log(result);
     return result;
@@ -137,7 +135,7 @@ const Dashboard = () => {
   const onDeleteAccount = async () => {
     if (!user?.username) return;
     await deleteAccount(user.username, apikey);
-    clearUser()
+    clearUser();
     console.log("Account Deleted");
     window.location.href = "/";
   };
@@ -202,7 +200,7 @@ const Dashboard = () => {
                       >
                         <span className="text-[17px]">{q.title}</span>
                         <span className="text-sm text-gray-500">
-                          Votes: {q.votes}
+                          Votes: {q.upvotes}
                         </span>
                       </div>
                     ))}

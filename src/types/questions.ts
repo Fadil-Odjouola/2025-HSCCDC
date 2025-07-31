@@ -10,7 +10,10 @@ export interface Question {
     answers: number;
     views: number;
     comments: number;
-    question_id: "";
-    acceptedAnswerId: boolean
+    question_id: string;
+    acceptedAnswerId: boolean;
+    closedVotes: number | null;
+    protectedVotes: number| null;
+    openVotes: number| null;
 }
 

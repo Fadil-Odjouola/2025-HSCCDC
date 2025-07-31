@@ -1,4 +1,4 @@
-export async function updatePoints(
+export async function updateUserPoints(
   username: string,
   operation: string,
   amount: number

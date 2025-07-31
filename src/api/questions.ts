@@ -1,25 +1,38 @@
-// src/api/questions.ts
 import type { Question } from "@/types/questions";
 
 const BASE_URL = "https://qoverflow.api.hscc.bdpa.org/v1";
 
-export async function fetchQuestions(sorting: string = "d"): Promise<Question[]> {
-    const url = `${BASE_URL}/questions/search?${sorting !== "d" ? `sort=${sorting}` : ""}`;
+export async function fetchQuestions(
+  sorting: "d" | "u" | "uvc" | "uvac" = "d",
+  afterId?: string,
+  query?: string
+): Promise<Question[]> {
+  let url = `${BASE_URL}/questions/search?`;
 
-    const response = await fetch(url, {
-        headers: {
-            "Authorization": "bearer 1ded7eb6-ab91-47f7-9cf7-7d1319a32e18",  // Replace with real token
-            "Content-Type": "application/json"
-        }
-    });
+  const params: string[] = [];
+  if (sorting !== "d") {
+    params.push(`sort=${sorting}`);
+  }
+  if (afterId) {
+    params.push(`after=${afterId}`);
+  }
+  if (query && query.trim() !== "") {
+    params.push(`q=${encodeURIComponent(query.trim())}`);
+  }
 
-    if (response.ok) {
-        console.log("questions fetched successfully");
-    } else {
-        throw new Error("Failed to fetch questions");
-    }
+  url += params.join("&");
 
-    const data = await response.json();
-    console.log(data);
-    return data.questions ?? [];
+  const response = await fetch(url, {
+    headers: {
+      Authorization: "bearer 1ded7eb6-ab91-47f7-9cf7-7d1319a32e18",
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch questions: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data.questions ?? [];
 }

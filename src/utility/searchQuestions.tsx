@@ -1,15 +1,31 @@
 import type { Question } from "@/types/questions";
+import dayjs from "dayjs";
 
+/**
+ * Filters and sorts questions based on a search query.
+ * Matches on title, text, creator username, or creation date (M/D/YYYY).
+ *
+ * @param questions - List of questions to search through.
+ * @param query - Search string, e.g., "react", "john", "7/31/2025".
+ * @returns Filtered and sorted list of matching questions.
+ */
 export const searchQuestions = (questions: Question[], query: string): Question[] => {
-  if (!query.trim()) return [...questions].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const trimmedQuery = query.trim().toLowerCase();
 
-  const lowerQuery = query.toLowerCase();
+  if (!trimmedQuery) {
+    // Default: return all questions sorted by date (newest first)
+    return [...questions].sort((a, b) => b.createdAt - a.createdAt);
+  }
 
   return questions
-    .filter((q) =>
-      q.title.toLowerCase().includes(lowerQuery) ||
-      q.text.toLowerCase().includes(lowerQuery) ||
-      q.creator.toLowerCase().includes(lowerQuery) 
-    )
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .filter((q) => {
+      const createdAtFormatted = dayjs(q.createdAt).format("M/D/YYYY").toLowerCase();
+      return (
+        q.title.toLowerCase().includes(trimmedQuery) ||
+        q.text.toLowerCase().includes(trimmedQuery) ||
+        q.creator.toLowerCase().includes(trimmedQuery) ||
+        createdAtFormatted.includes(trimmedQuery)
+      );
+    })
+    .sort((a, b) => b.createdAt - a.createdAt); // Sort by newest
 };
