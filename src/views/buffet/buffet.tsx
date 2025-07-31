@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import type { Question } from "@/types/questions";
 import { fetchQuestions } from "@/api/questions";
 import { useSearch } from "@/context/SearchContext";
@@ -10,19 +10,14 @@ import { getUserLocal } from "@/components/backendUserLocal";
 import { useUser } from "@/context/UserContext";
 import { motion } from "framer-motion";
 import { useUserCache } from "@/context/userCacheContext";
-import { useUsers } from "@/context/usersContext";
-import hashEmail from "@/utility/emailhash";
 
 type SortType = "recent" | "best" | "interesting" | "hot";
 
-const sortMap: Record<SortType, "d" | "u" | "uvc" | "uvac"> = {
-  recent: "d",
+const sortMap: Record<Exclude<SortType, "recent">, "u" | "uvc" | "uvac"> = {
   best: "u",
   interesting: "uvc",
   hot: "uvac",
 };
-
-const MAX_MATCHED = 100;
 
 function QuestionCard({
   question,
@@ -30,8 +25,8 @@ function QuestionCard({
   levels,
 }: {
   question: Question;
-  hashedemail: string;
-  levels: number;
+  hashedemail?: string;
+  levels?: number;
 }) {
   return (
     <motion.a
@@ -65,7 +60,7 @@ function QuestionCard({
               className="w-6 h-6 rounded-full"
             />
             <span className="font-bold">Creator:</span> {question.creator} |{" "}
-            {levels}
+            {levels ?? "N/A"}
           </span>
           <span className="text-xs text-gray-500">
             {dayjs(question.createdAt).format("M/D/YYYY")} –{" "}
@@ -81,109 +76,94 @@ export default function Buffet() {
   const [sortType, setSortType] = useState<SortType>("recent");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [afterCursor, setAfterCursor] = useState<string | undefined>();
   const [hasMore, setHasMore] = useState(true);
   const [show, setShow] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const observerRef = useRef<HTMLDivElement>(null);
-  const loadingRef = useRef(false);
   const [isLoggedin, setLoggedIn] = useState(false);
-  const lastIdRef = useRef<string | undefined>(undefined);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   const { searchQuery } = useSearch();
-  const { setHashedEmails, setLevels, hashedEmail, level} = useUsers();
+  const { user } = useUser();
   const { hashedEmails, levels, loading: usersLoading } = useUserCache();
 
-  useEffect(() => {
-    if (!usersLoading) {
-      setHashedEmails(hashedEmails);
-      console.log("email hashed")
-      setLevels(levels);
-    }
-  }, [usersLoading, hashedEmails, levels]);
+  const loaderRef = useRef<HTMLDivElement | null>(null);
+  const observer = useRef<IntersectionObserver | null>(null);
 
   const filteredQuestions = useMemo(() => {
     return searchQuestions(questions, searchQuery);
   }, [questions, searchQuery]);
 
-  const filterForType = (qs: Question[]): Question[] => {
-    if (sortType === "interesting") {
-      return qs.filter((q) => !q.hasAcceptedAnswer && q.answers === 0);
-    } else if (sortType === "hot") {
-      return qs.filter((q) => !q.hasAcceptedAnswer);
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const fetchMore = async () => {
+    if (isLoading || !hasMore) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const param = sortType === "recent" ? "d" : sortMap[sortType];
+      const response = await fetchQuestions(param, afterCursor);
+      console.log(response)
+
+      if (response.length === 0) {
+        setHasMore(false);
+      } else {
+        setQuestions((prev) => [...prev, ...response]);
+        setAfterCursor(response[response.length - 1].question_id);
+      }
+    } catch (error: any) {
+      setError(error.message || "Failed to load more questions");
+    } finally {
+      setIsLoading(false);
     }
-    return qs;
   };
 
-  const fetchInitial = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setQuestions([]);
-      setHasMore(true);
-      setError(null);
-      lastIdRef.current = undefined;
-
-      const sortParam = sortMap[sortType];
-      const initial = await fetchQuestions(sortParam);
-      const filtered = filterForType(initial);
-
-      setQuestions(filtered);
-      lastIdRef.current = initial.at(-1)?.question_id;
-
-      if (filtered.length >= MAX_MATCHED || initial.length < 100) {
-        setHasMore(false);
-      }
-    } catch (err: any) {
-      setError(err);
-    } finally {
-      setIsLoading(false);
-    }
+  useEffect(() => {
+    setQuestions([]);
+    setAfterCursor(undefined);
+    setHasMore(true);
+    fetchMore();
   }, [sortType]);
 
-  const fetchMore = useCallback(async () => {
-    if (loadingRef.current || !hasMore || !lastIdRef.current) return;
-    loadingRef.current = true;
-    setIsLoading(true);
-
-    try {
-      const sortParam = sortMap[sortType];
-      const next = await fetchQuestions(sortParam, lastIdRef.current);
-      lastIdRef.current = next.at(-1)?.question_id;
-
-      const filtered = filterForType(next);
-      setQuestions((prev) => {
-        const merged = [...prev, ...filtered];
-        if (merged.length >= MAX_MATCHED || next.length < 100)
-          setHasMore(false);
-        return merged;
-      });
-    } catch (err: any) {
-      setError(err);
-    } finally {
-      loadingRef.current = false;
-      setIsLoading(false);
-    }
-  }, [sortType, hasMore]);
-
   useEffect(() => {
-    fetchInitial();
-  }, [fetchInitial]);
+    if (!loaderRef.current || !hasMore) return;
 
-  useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && hasMore && !isLoading) {
-        fetchMore();
-      }
-    });
-    if (observerRef.current) observer.observe(observerRef.current);
-    return () => observer.disconnect();
-  }, [fetchMore, hasMore, isLoading]);
+    if (observer.current) observer.current.disconnect();
+
+    observer.current = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) fetchMore();
+      },
+      { threshold: 1.0 }
+    );
+
+    observer.current.observe(loaderRef.current);
+
+    return () => observer.current?.disconnect();
+  }, [loaderRef.current, hasMore, isLoading]);
 
   useEffect(() => {
     const localUser = getUserLocal();
     if (localUser) setLoggedIn(true);
   }, []);
 
-  if (error) {
+  if (isLoading && questions.length === 0 )  {
+    return (
+      <div className="pt-16 p-6 max-w-3xl mx-auto bg-gray-50 rounded-xl shadow-sm mt-20 text-center text-gray-700">
+        Loading questions...
+      </div>
+    );
+  }
+
+  if (error && questions.length === 0) {
     return (
       <div className="pt-16 p-6 max-w-3xl mx-auto bg-red-50 rounded-xl shadow-sm mt-20 text-center text-red-600">
         Error loading questions: {error.message || "Unknown error"}
@@ -232,21 +212,30 @@ export default function Buffet() {
             No questions found.
           </div>
         ) : (
-          filteredQuestions.map((q) => (
+          filteredQuestions.map((q, index) => (
             <QuestionCard
-              key={q.question_id}
+              key={index}
               question={q}
-              hashedemail={hashedEmail[q.creator]}
-              levels={level[q.creator]}
+              hashedemail={hashedEmails?.[q.creator]}
+              levels={levels?.[q.creator]}
             />
           ))
         )}
       </div>
 
-      {isLoading && (
-        <div className="text-center text-gray-500 mt-4">Loading more...</div>
+      <div ref={loaderRef} className="text-center text-gray-500 py-4">
+        {isLoading && "Loading more..."}
+        {!hasMore && "No more questions"}
+      </div>
+
+      {showBackToTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed bottom-6 right-6 z-50 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg hover:bg-gray-700 transition"
+        >
+          Back to Top ↑
+        </button>
       )}
-      <div ref={observerRef} className="h-10" />
     </motion.div>
   );
 }

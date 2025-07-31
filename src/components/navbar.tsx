@@ -155,14 +155,14 @@ export default function Navbar() {
             </div>
 
             {/* Calendar date picker */}
-            <input
+            {/*<input
               type="date"
               className="border border-gray-300 rounded-lg p-2 cursor-pointer"
               max={new Date().toISOString().split("T")[0]}
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
               aria-label="Filter questions from date"
-            />
+            />*/}
           </div>
 
           {/* Desktop Navigation */}

@@ -127,6 +127,7 @@ export default function QA() {
   const [showCommentsMsg, setShowCommentMsg] = useState(false);
   const [showAnswerMsg, setShowAnswerMsg] = useState(false);
   const [alreadyVoted, setAlreadyVoted] = useState(false);
+  const [alreadyVotedTarget, setAlreadyVotedTarget] = useState("");
   const [usersQuestion, setUsersQuestion] = useState(false);
   const { user, updateUser } = useUser();
   const { hashedEmails, levels } = useUserCache();
@@ -206,8 +207,24 @@ export default function QA() {
     }
   };
 
+  useEffect(() => {
+    const fetchsum = async () => {
+      if (!user?.username) return;
+      const voteCheck = await checkQuestionVoted(
+        question.question_id,
+        user.username,
+        apikey
+      );
+      if (voteCheck) {
+        setAlreadyVoted(true);
+        setAlreadyVotedTarget(voteCheck.vote);
+        console.log(setAlreadyVotedTarget);
+      }
+    };
+    fetchsum();
+  }, [question]);
+
   const handlevote = async (target: string) => {
-    setAlreadyVoted(false);
     if (!user?.username) return;
     const voteCheck = await checkQuestionVoted(
       question.question_id,
@@ -217,36 +234,40 @@ export default function QA() {
     console.log(voteCheck);
 
     if (voteCheck) {
-      if (target == "u") {
-        const result = await updateQuestionVote(
-          question.question_id,
-          "increment",
-          user.username,
-          "upvotes"
-        );
-        console.log(result);
-        setQuestion((prev) => ({
-          ...prev,
-          upvotes: prev.upvotes + 1,
-        }));
-        updateUserPoints(question.creator, "increment", 5);
-        setAlreadyVoted(false);
-      } else {
-        const result = await updateQuestionVote(
-          question.question_id,
-          "increment",
-          user.username,
-          "downvotes"
-        );
-        console.log(result);
-        setQuestion((prev) => ({
-          ...prev,
-          downvotes: prev.downvotes + 1,
-        }));
-        updateUserPoints(question.creator, "decrement", 1);
-        updateUserPoints(user.username, "decrement", 1);
-        updateUser({ points: user.points - 1 });
-        setAlreadyVoted(false);
+      if (alreadyVoted) {
+        if (target == "u") {
+          const result = await updateQuestionVote(
+            question.question_id,
+            "increment",
+            user.username,
+            "upvotes"
+          );
+          console.log(result);
+          setQuestion((prev) => ({
+            ...prev,
+            upvotes: prev.upvotes + 1,
+          }));
+          updateUserPoints(question.creator, "increment", 5);
+          setAlreadyVoted(true);
+          setAlreadyVotedTarget("upvotes");
+        } else {
+          const result = await updateQuestionVote(
+            question.question_id,
+            "increment",
+            user.username,
+            "downvotes"
+          );
+          console.log(result);
+          setQuestion((prev) => ({
+            ...prev,
+            downvotes: prev.downvotes + 1,
+          }));
+          updateUserPoints(question.creator, "decrement", 1);
+          updateUserPoints(user.username, "decrement", 1);
+          updateUser({ points: user.points - 1 });
+          setAlreadyVoted(true);
+          setAlreadyVotedTarget("downvotes");
+        }
       }
     } else {
       setAlreadyVoted(true);
@@ -318,7 +339,6 @@ export default function QA() {
     fetchQuestionsAndAnswers();
   }, []);
 
-
   const handleStatusVote = async (type: "closed" | "protected" | "open") => {
     const updatedQuestion = { ...question };
 
@@ -358,6 +378,37 @@ export default function QA() {
 
     // Re-sync local state
     setQuestion(updatedQuestion);
+  };
+
+  const handleUndoVote = async () => {
+    if (!user?.username || !alreadyVotedTarget) return;
+
+    const result = await updateQuestionVote(
+      question.question_id,
+      "decrement",
+      user.username,
+      alreadyVotedTarget
+    );
+    console.log(result)
+
+    if (result.success) {
+      // Update local vote count
+      setQuestion((prev) => ({
+        ...prev,
+        upvotes:
+          alreadyVotedTarget === "upvotes" ? prev.upvotes - 1 : prev.upvotes,
+        downvotes:
+          alreadyVotedTarget === "downvotes"
+            ? prev.downvotes - 1
+            : prev.downvotes,
+      }));
+
+      // Clear vote state
+      setAlreadyVoted(false);
+      setAlreadyVotedTarget("");
+    } else {
+      console.error("Failed to undo vote");
+    }
   };
 
   function detectOngoingVote(question: Question): VoteType | null {
@@ -483,6 +534,17 @@ export default function QA() {
               >
                 <ThumbsDown className="w-6 h-6" /> {question.downvotes}
               </motion.button>
+              {alreadyVoted && (
+                <div>
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleUndoVote}
+                    className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-full text-sm text-white transition-all duration-200 ease-linear"
+                  >
+                    Undo vote
+                  </motion.button>
+                </div>
+              )}
             </div>
             <div className="flex flex-row p-3 gap-4">
               {ongoingVote !== null && (

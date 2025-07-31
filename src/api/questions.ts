@@ -4,15 +4,23 @@ const BASE_URL = "https://qoverflow.api.hscc.bdpa.org/v1";
 
 export async function fetchQuestions(
   sorting: "d" | "u" | "uvc" | "uvac" = "d",
-  afterId?: string
+  afterId?: string,
+  query?: string
 ): Promise<Question[]> {
   let url = `${BASE_URL}/questions/search?`;
+
+  const params: string[] = [];
   if (sorting !== "d") {
-    url += `sort=${sorting}`;
+    params.push(`sort=${sorting}`);
   }
   if (afterId) {
-    url += `${sorting !== "d" ? "&" : ""}after=${afterId}`;
+    params.push(`after=${afterId}`);
   }
+  if (query && query.trim() !== "") {
+    params.push(`q=${encodeURIComponent(query.trim())}`);
+  }
+
+  url += params.join("&");
 
   const response = await fetch(url, {
     headers: {
@@ -21,7 +29,9 @@ export async function fetchQuestions(
     },
   });
 
-  if (!response.ok) throw new Error("Failed to fetch questions");
+  if (!response.ok) {
+    throw new Error(`Failed to fetch questions: ${response.statusText}`);
+  }
 
   const data = await response.json();
   return data.questions ?? [];
