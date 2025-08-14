@@ -26,6 +26,8 @@ import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { useUserCache } from "@/context/userCacheContext";
 dayjs.extend(relativeTime);
 import { apikey } from "@/api/apikey";
+import { useBounty } from "@/context/useBounty";
+import { bountyDB } from "@/db/bountyDB";
 type VoteType = "closed" | "protected" | "open";
 
 type MailSentMessageProps = {
@@ -115,6 +117,66 @@ const ErrorCheckedMsg: React.FC<MailSentMessageProps> = ({
   );
 };
 
+interface Props {
+  questionId: string;
+  currentUserId: string | undefined;
+  answerAuthorId: string;
+}
+
+export function BountyPanel({
+  questionId,
+  currentUserId,
+  answerAuthorId,
+}: Props) {
+  const { user, updateUser } = useUser();
+  const { bounty, addBounty, awardBounty } = useBounty(questionId);
+  const [amount, setAmount] = useState<number>(75);
+
+  if (!user) return <div>Loading user...</div>;
+
+  return (
+    <div style={{ border: "1px solid #ccc", padding: 12, borderRadius: 8 }}>
+      <div>💳 Your points: {user.points}</div>
+      {bounty ? (
+        <div>
+          <strong>💰 {bounty.amount} pts bounty</strong>
+          <div>Added by: {bounty.addedByUserId}</div>
+          {bounty.awardedToUserId ? (
+            <div>✅ Awarded to: {bounty.awardedToUserId}</div>
+          ) : (
+            <button
+              onClick={async () => {
+                const answerUser = (await bountyDB.users.get(
+                  answerAuthorId
+                )) || {
+                  id: answerAuthorId,
+                  username: `User-${answerAuthorId}`,
+                  points: 500,
+                };
+                if (!answerUser.id) await bountyDB.users.put(answerUser);
+                await awardBounty(answerUser);
+              }}
+            >
+              Award Bounty
+            </button>
+          )}
+        </div>
+      ) : (
+        <div>
+          <input
+            type="number"
+            min={75}
+            max={500}
+            value={amount}
+            onChange={(e) => setAmount(Number(e.target.value))}
+          />
+          <button onClick={() => addBounty(amount)} className="w-max h-max border">Add Bounty</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function QA() {
   const [newAnswer, setNewAnswer] = useState("");
   const [newComment, setNewComment] = useState("");
@@ -148,10 +210,14 @@ export default function QA() {
     openVotes: null,
     closedVotes: null,
     protectedVotes: null,
+    bounty: false,
+    bountyValue: 0,
   });
   const [ongoingVote, setOngoingVote] = useState<
     "protected" | "closed" | "open" | null
   >(null);
+  ///const { bounty, addBounty, awardBounty } = useBounty(question.question_id);
+  const [amount, setAmount] = useState(75);
 
   const [answers, setanswers] = useState<Answer[]>([]);
 
@@ -411,6 +477,11 @@ export default function QA() {
     if ((question.protectedVotes ?? 0) > 0) return "protected";
     if ((question.openVotes ?? 0) > 0) return "open";
     return null;
+  }
+
+  function handleBounty(){
+    if (!user?.points) return;
+    updateUser({points: user?.points - amount})
   }
 
   useEffect(() => {

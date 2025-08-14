@@ -13,6 +13,8 @@ interface UserContextType {
   user: UserLocal | null;
   updateUser: (updatedFields: Partial<UserLocal>) => void;
   clearUser: () => void;
+  deductPoints: (amount: number) => void;
+  addPoints: (amount: number) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -64,8 +66,29 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     sessionStorage.removeItem("User_logged");
   };
 
+  // Deduct points from user
+  const deductPoints = (amount: number) => {
+    if (!user || typeof user.points !== "number") return;
+    if (user.points < amount) return;
+    const updatedUser = { ...user, points: user.points - amount };
+    setUser(updatedUser);
+    const userString = JSON.stringify(updatedUser);
+    localStorage.setItem("User_logged", userString);
+    sessionStorage.setItem("User_logged", userString);
+  };
+
+  // Add points to user
+  const addPoints = (amount: number) => {
+    if (!user || typeof user.points !== "number") return;
+    const updatedUser = { ...user, points: user.points + amount };
+    setUser(updatedUser);
+    const userString = JSON.stringify(updatedUser);
+    localStorage.setItem("User_logged", userString);
+    sessionStorage.setItem("User_logged", userString);
+  };
+
   return (
-    <UserContext.Provider value={{ user, updateUser, clearUser }}>
+    <UserContext.Provider value={{ user, updateUser, clearUser, deductPoints, addPoints }}>
       {children}
     </UserContext.Provider>
   );

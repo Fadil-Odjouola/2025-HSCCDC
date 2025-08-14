@@ -15,5 +15,7 @@ export interface Question {
     closedVotes: number | null;
     protectedVotes: number| null;
     openVotes: number| null;
+    bounty: boolean;
+    bountyValue: number;
 }
 
