@@ -61,7 +61,9 @@ const Mail = () => {
   const [error, setError] = useState<string | null>(null);
   const [bigerror, SetBigError] = useState(false);
   const [currentReadID, setCurrentReadID] = useState<number>();
+  const [popUp, setPopUp] = useState<Message | null>();
   const { user } = useUser();
+
 
   const [readMessageIds, setReadMessageIds] = useState<string[]>([]);
 
@@ -150,29 +152,64 @@ const Mail = () => {
     });
   };
 
-
-  const MessageCard = ({ message }: { message: Message }) => {
-    return (
-      <div className="border rounded-lg p-4 shadow-sm bg-white w-full break-words" >
+  // Popup Component
+  const MessagePopUp = ({
+    message,
+    onClose,
+  }: {
+    message: Message;
+    onClose: () => void;
+  }) => (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-xl max-w-lg w-full mx-4 relative">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+        >
+          ✕
+        </button>
         <div className="mb-1 text-gray-800 flex flex-row items-center justify-between">
           <h4 className="text-lg sm:text-xl font-semibold truncate">
             {message.subject}
           </h4>
-          <button 
-            onClick={() => {
-              const stored = JSON.parse(localStorage.getItem('readMessages') || '[]');
-              if (!stored.includes(String(message.mail_id))) {
-                const updated = [...stored, String(message.mail_id)];
-                localStorage.setItem('readMessages', JSON.stringify(updated));
-              }
-              setCurrentReadID(message.mail_id);
-            }}>
+          <MailsIcon
+            className={`w-max h-max p-4 text-lg ${readMessageIds.includes(String(message.mail_id)) ? "bg-green-500" : ""
+              }`}
+          />
+        </div>
+        <p className="text-sm text-gray-500 truncate">From: {message.sender}</p>
+        <p className="mt-2 text-gray-700 whitespace-pre-wrap">{message.text}</p>
+      </div>
+    </div>
+  );
+
+
+
+
+  const MessageCard = ({ message }: { message: Message }) => {
+    return (
+      <div className="border rounded-lg p-4 shadow-sm bg-white w-full break-words"
+        onClick={() => {
+          const stored = JSON.parse(localStorage.getItem('readMessages') || '[]');
+          if (!stored.includes(String(message.mail_id))) {
+            const updated = [...stored, String(message.mail_id)];
+            localStorage.setItem('readMessages', JSON.stringify(updated));
+          }
+          setCurrentReadID(message.mail_id);
+          setPopUp(message);
+        }}
+      >
+        <div className="mb-1 text-gray-800 flex flex-row items-center justify-between">
+          <h4 className="text-lg sm:text-xl font-semibold truncate">
+            {message.subject}
+          </h4>
+          <button >
             <MailsIcon className={`w-max h-max p-2 text-lg ${readMessageIds.includes(String(message.mail_id)) ? 'bg-green-500' : ''
               }`}
-            
-          />
+
+            />
           </button>
-          
+
         </div>
         <p className="text-sm text-gray-500 truncate">From: {message.sender}</p>
         <p className="mt-2 text-gray-700 whitespace-pre-wrap">{message.text}</p>
@@ -257,12 +294,18 @@ const Mail = () => {
           yes
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-          {messages.map((msg) => (
-            <MessageCard key={msg.mail_id} message={msg} />
-          ))}
-        </div>
-      )}
+        <>
+          {popUp && (
+            <MessagePopUp message={popUp} onClose={() => setPopUp(null)} />
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+            {messages.map((msg) => (
+              <MessageCard key={msg.mail_id} message={msg} />
+            ))}
+          </div>
+        </>
+      )
+      }
     </div>
   );
 };
