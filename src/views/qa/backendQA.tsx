@@ -595,3 +595,31 @@ export async function updateQuestionStatus(
     console.error("❌ Network error:", err);
   }
 }
+export async function deleteComment(quesionId: string,commentId: string, apikey: string) {
+  try {
+    const response = await fetch(
+      `https://qoverflow.api.hscc.bdpa.org/v1/questions/${quesionId}/comments/${commentId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${apikey}`,
+          "Content-Type": "application/json",
+        },
+
+      }
+    );
+
+    const result: any = await response.json()
+    console.log(result)
+
+    if (result.success) {
+        console.log("Great, you deleted the comment")
+        return result;
+    } else{
+        console.log(`ERROR: ${result.error}`)
+        return result
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}

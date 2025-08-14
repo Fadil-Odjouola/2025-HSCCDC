@@ -66,6 +66,18 @@ function QuestionCard({
             {dayjs(question.createdAt).format("M/D/YYYY")} –{" "}
             {dayjs(question.createdAt).fromNow()}
           </span>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              const link = `${window.location.origin}/question/${question.question_id}`;
+              navigator.clipboard.writeText(link)
+                .then(() => alert("Link copied to clipboard!"))
+                .catch(() => alert("Failed to copy link"));
+            }}
+            className=" hover:underline text-sm w-max h-max p-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-800 transition-all duration-300 ease-linear"
+          >
+            Share
+          </button>
         </div>
       </div>
     </motion.a>

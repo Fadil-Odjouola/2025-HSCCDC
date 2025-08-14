@@ -687,6 +687,7 @@ export default function QA() {
           <div>
             <PaginatedComments
               comments={comments}
+              questionId={question.question_id}
               isError={isErrorComments}
               isLoading={isLoadingComments}
             />

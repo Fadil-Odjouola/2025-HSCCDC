@@ -13,6 +13,8 @@ import {
 import { motion } from "framer-motion";
 import { useUser } from "@/context/UserContext";
 import type { Question } from "@/types/questions";
+import { useBadges } from "@/context/badgesContext";
+import { object } from "framer-motion/client";
 
 const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
 
@@ -31,6 +33,7 @@ type answer = {
   question_id: string;
   upvotes: number;
   downvotes: number;
+  accepted: boolean;
 };
 
 const MailSentMessage: React.FC<MailSentMessageProps> = ({
@@ -81,6 +84,7 @@ const Dashboard = () => {
   const { user, updateUser, clearUser } = useUser();
   const [showMessage, SetShowMessage] = useState(false);
   const [showMessage2, SetShowMessage2] = useState(false);
+  const { badges } = useBadges();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -260,7 +264,11 @@ const Dashboard = () => {
                     .map((a) => (
                       <div
                         key={a.answer_id}
-                        className="p-2 rounded hover:bg-gray-100 cursor-pointer flex justify-between items-center transition-all duration-250 ease-linear"
+                        className={`p-2 rounded hover:bg-gray-100 cursor-pointer flex justify-between items-center transition-all duration-250 ease-linear ${
+                          a.accepted
+                            ? " border-3 border-green-500 shadow-2xl"
+                            : ""
+                        }`}
                         onClick={() =>
                           (window.location.href = `/question/${
                             a.question_id || a.question_id
@@ -307,6 +315,103 @@ const Dashboard = () => {
                 You have not answered any questions yet.
               </p>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card style="">
+        <CardContent>
+          <h3 className="text-lg font-semibold mb-4">Your badges</h3>
+          <div className="flex flex-row gap-2 justify-around relative">
+            {Object.values(badges).map((category) => {
+              // Calculate the number of completed sub-badges
+              const completedCount = Object.values(category.subbadges).filter(
+                (sub) => sub.completed
+              ).length;
+              // Get the total number of sub-badges
+              const totalCount = Object.keys(category.subbadges).length;
+
+              return (
+                // Important: Add a unique 'key' prop when mapping over lists
+                <div className="relative shadow-2xl h-max w-[350px] p-2 justify-center items-center flex flex-col">
+                  <div
+                    key={category.name}
+                    className="relative space-y-2 h-max p-2 justify-center items-center flex flex-col"
+                  >
+                    <h1
+                      className={`font-bold text-2xl drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)] ${
+                        category.style === "gold"
+                          ? "text-[#E6C200]"
+                          : category.style === "silver"
+                          ? "text-gray-400"
+                          : "text-[#CD7F32]"
+                      }`}
+                    >
+                      {category.name} Badges{" "}
+                      <span className="font-medium text-base text-gray-500">
+                        {completedCount}/{totalCount}
+                      </span>
+                    </h1>
+                    <div className="relative flex flex-col justify-between h-max gap-2 w-full">
+                      {/* Map over the sub-badges for the current category */}
+                      {Object.values(category.subbadges).map((sub) => (
+                        // Important: Add a unique 'key' prop for each sub-badge
+                        <div
+                          key={sub.title}
+                          className={`flex items-center gap-2 p-2 rounded-lg shadow-sm ${
+                            sub.completed
+                              ? "bg-green-100 text-green-700"
+                              : "bg-gray-100 text-gray-500"
+                          }`}
+                        >
+                          <span className="inline-flex items-center justify-center">
+                            {sub.completed ? (
+                              // SVG for a completed badge (check)
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-6 w-6 text-green-500"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            ) : (
+                              // SVG for an incomplete badge (cross)
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-6 w-6 text-gray-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                            )}
+                          </span>
+                          <div>
+                            <span className="font-semibold">{sub.title}:</span>{" "}
+                            <span className="font-normal">
+                              {sub.description}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>

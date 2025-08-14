@@ -3,6 +3,14 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUserCache } from "@/context/userCacheContext";
+import { ThumbsUp, ThumbsDown, X, CheckCircle, Trash2Icon } from "lucide-react";
+import {
+  checkCommentVote,
+  deleteComment,
+  updateCommentsVote,
+} from "./backendQA";
+import { useUser } from "@/context/UserContext";
+const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
 
 dayjs.extend(relativeTime);
 
@@ -22,17 +30,25 @@ interface PaginatedCommentsProps {
   comments: Comment[];
   isLoading?: boolean;
   isError?: boolean;
+  questionId: string;
 }
 
 const PaginatedComments: React.FC<PaginatedCommentsProps> = ({
+  questionId,
   comments,
   isLoading = false,
   isError = false,
 }) => {
+  const [localComments, setLocalComments] = useState(comments);
+  useEffect(() => {
+    setLocalComments(comments);
+  }, [comments]);
+
   const [currentPage, setCurrentPage] = useState(1);
-  const { hashedEmails, levels, loading: userCacheLoading } = useUserCache();
-  const totalPages = Math.ceil(comments.length / PAGE_SIZE);
-  const paginatedComments = comments.slice(
+  const { user } = useUser();
+  const { hashedEmails, levels, } = useUserCache();
+  const totalPages = Math.ceil(localComments.length / PAGE_SIZE);
+  const paginatedComments = localComments.slice(
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE
   );
@@ -113,12 +129,68 @@ const PaginatedComments: React.FC<PaginatedCommentsProps> = ({
     );
   }
 
-  if (comments.length === 0) {
+  if (localComments.length === 0) {
     return (
       <div className="text-center py-10 text-gray-500">No comments yet.</div>
     );
   }
 
+  const checkIfcommentIsVoted = async (commentId: string) => {
+    if (!user?.username) return;
+    const result = await checkCommentVote(
+      questionId,
+      commentId,
+      user.username,
+      apikey
+    );
+    if (result.vote) {
+      console.log("already voted");
+      console.log(result);
+      return result;
+    } else {
+      console.log("u didnt vote");
+      console.log(result);
+      return result;
+    }
+  };
+  const handleVote = async (commentId: string, operation: string) => {
+    if (!user?.username) return;
+    if (operation.toLocaleLowerCase() == "up") {
+      const result = await updateCommentsVote(
+        questionId,
+        commentId,
+        "increment",
+        user.username,
+        "upvotes"
+      );
+      console.log(result);
+    } else if (operation.toLocaleLowerCase() == "down") {
+      const result = await updateCommentsVote(
+        questionId,
+        commentId,
+        "increment",
+        user.username,
+        "downvotes"
+      );
+      console.log(result);
+    }
+  };
+
+  const handleDisable = (targetLevel: number) => {
+    if (!user?.level) return true;
+    if (user?.level >= targetLevel) {
+      return false;
+    } else {
+      return true;
+    }
+  };
+  const handleDelete = async (commentId: string) => {
+    const result = await deleteComment(questionId, commentId, apikey);
+    if (result.success) {
+      setLocalComments(prev => prev.filter(c => c.comment_id !== commentId));
+    }
+    return result;
+  };
   // Render
   return (
     <div className="space-y-6">
@@ -146,6 +218,9 @@ const PaginatedComments: React.FC<PaginatedCommentsProps> = ({
                   <span className="font-medium">
                     {comment.creator} | Level: {levels[comment.creator]}
                   </span>
+                  {user?.username == comment.creator ? (
+                    <h1 className="font-bold text-lg">This comment was created by you</h1>
+                  ) : null}
                 </div>
                 <div className="text-xs text-gray-500 flex flex-row gap-3 translate-x-30">
                   {dayjs(comment.createdAt).format("MMM D, YYYY")} |{" "}
@@ -156,6 +231,38 @@ const PaginatedComments: React.FC<PaginatedCommentsProps> = ({
               <div className="prose prose-sm max-w-none">
                 <div>{comment.text}</div>
               </div>
+            </div>
+            <div className="flex gap-3 mt-4 items-center flex-wrap">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                disabled={handleDisable(2)}
+                onClick={() => handleVote(comment.comment_id, "up")}
+                className={`flex items-center gap-1  px-3 py-1.5 rounded-full text-sm text-white ${
+                  user?.level == 2
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-gray-600 hover:bg-gray-700"
+                }`}
+              >
+                <ThumbsUp className="w-4 h-4" /> {comment.upvotes}
+              </motion.button>
+
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                //disabled={handleDisable(4)}
+                onClick={() => handleVote(comment.comment_id, "down")}
+                className={`flex items-center gap-1  px-3 py-1.5 rounded-full text-sm text-white ${
+                  user?.level == 4
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-gray-600 hover:bg-gray-700"
+                }`}
+              >
+                <ThumbsDown className="w-4 h-4" /> {comment.downvotes}
+              </motion.button>
+              {user?.username == comment.creator ? (
+                <button onClick={() => handleDelete(comment.comment_id)}>
+                  <Trash2Icon className="w-max h-max text-lg p-2 text-white bg-red-500 hover:bg-red-600 transition-all duration-300 ease-linear rounded-lg" />
+                </button>
+              ) : null}
             </div>
           </motion.div>
         ))}

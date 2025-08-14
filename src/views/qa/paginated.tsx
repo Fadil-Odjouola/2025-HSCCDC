@@ -397,6 +397,7 @@ export const PaginatedAnswers = ({
       <AnimatePresence mode="wait" initial={false}>
         {paginatedAnswers.map((answer) => (
           <motion.div
+            id={`answer-${answer.answer_id}`}
             key={answer.answer_id}
             className=" rounded-lg p-4 shadow-sm relative"
             initial={{ opacity: 0, y: 10 }}
@@ -425,12 +426,26 @@ export const PaginatedAnswers = ({
                     Level: {levels[answer.creator] ?? "N/A"}
                   </span>
                 </div>
-                <div>
-                  {dayjs(answer.createdAt).format("M/D/YYYY")} -{" "}
-                  {dayjs(answer.createdAt).fromNow()} | Points:{" "}
-                  {(voteCounts[answer.answer_id]?.upvotes ?? answer.upvotes) -
-                    (voteCounts[answer.answer_id]?.downvotes ??
-                      answer.downvotes)}
+                <div className="flex items-center">
+                  <span>
+                    {dayjs(answer.createdAt).format("M/D/YYYY")} -{" "}
+                    {dayjs(answer.createdAt).fromNow()} | Points:{" "}
+                    {(voteCounts[answer.answer_id]?.upvotes ?? answer.upvotes) -
+                      (voteCounts[answer.answer_id]?.downvotes ??
+                        answer.downvotes)}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const link = `${window.location.origin}/question/${question_id}#answer-${answer.answer_id}`;
+                      navigator.clipboard.writeText(link)
+                        .then(() => alert("Answer link copied to clipboard!"))
+                        .catch(() => alert("Failed to copy link"));
+                    }}
+                    className=" hover:underline text-sm w-max h-max p-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-800 transition-all duration-300 ease-linear m-1"
+                  >
+                    Share
+                  </button>
                 </div>
               </div>
 
