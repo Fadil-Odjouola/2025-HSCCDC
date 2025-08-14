@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { sendmail, getmail } from "./backendMail";
 import { getUserLocal } from "@/components/backendUserLocal";
+import { useUser } from "@/context/UserContext";
+import { MailsIcon } from "lucide-react";
 
 interface Message {
   mail_id: number;
@@ -10,7 +12,7 @@ interface Message {
 }
 
 interface NewMail {
-  sender: string;
+  sender: string | undefined;
   receiver: string;
   subject: string;
   text: string;
@@ -23,17 +25,10 @@ type MailSentMessageProps = {
 
 const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
 
-const MessageCard = ({ message }: { message: Message }) => {
-  return (
-    <div className="border rounded-lg p-4 shadow-sm bg-white w-full break-words">
-      <h4 className="text-lg sm:text-xl font-semibold truncate">
-        {message.subject}
-      </h4>
-      <p className="text-sm text-gray-500 truncate">From: {message.sender}</p>
-      <p className="mt-2 text-gray-700 whitespace-pre-wrap">{message.text}</p>
-    </div>
-  );
-};
+
+
+
+
 
 const MailSentMessage: React.FC<MailSentMessageProps> = ({
   duration = 3000,
@@ -71,9 +66,12 @@ const Mail = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bigerror, SetBigError] = useState(false);
+  const { user } = useUser();
+
+  const [readMessageIds, setReadMessageIds] = useState<string[]>([]);
 
   const [mail, Setmail] = useState<NewMail>({
-    sender: "",
+    sender: user?.username,
     receiver: "",
     subject: "",
     text: "",
@@ -86,6 +84,20 @@ const Mail = () => {
         ...prev,
         sender: k.username,
       }));
+    }
+  }, []);
+
+  useEffect(() => {
+    const storedReadMessages = localStorage.getItem('currentUserReadMessages');
+    if (storedReadMessages) {
+      try {
+        const parsedIds: string[] = JSON.parse(storedReadMessages);
+        setReadMessageIds(parsedIds);
+      } catch (e) {
+        console.error("Failed to parse read messages from localStorage:", e);
+        // Fallback to empty array if parsing fails
+        setReadMessageIds([]);
+      }
     }
   }, []);
 
@@ -129,6 +141,96 @@ const Mail = () => {
     }
   };
 
+
+  // 
+  const markMessageAsRead = (messageId: string) => {
+    setReadMessageIds(prevReadIds => {
+      // Ensure we don't add duplicates
+      if (!prevReadIds.includes(messageId)) {
+        const updatedIds = [...prevReadIds, messageId];
+        localStorage.setItem('currentUserReadMessages', JSON.stringify(updatedIds));
+        return updatedIds;
+      }
+      return prevReadIds; // If already includes, return current state without change
+    });
+  };
+
+
+  // Checks User in localstorage
+  useEffect(() => {
+    // Get the ID of the user currently logged in
+    const currentUserId = user?.user_id; // Assuming `user` object from `useUser()` has an `id` property
+
+    // Get the ID of the user whose data is currently in localStorage
+    const storedUserId = localStorage.getItem('currentUserId');
+
+    // Get the read messages from localStorage
+    const storedReadMessages = localStorage.getItem('currentUserReadMessages');
+
+    if (currentUserId) {
+      // If there's a logged-in user:
+      localStorage.setItem('currentUserId', currentUserId); // Always update or set the current user ID in localStorage
+
+      if (storedUserId === currentUserId) {
+        // Case 1: Stored user matches current user
+        // Load their read messages
+        if (storedReadMessages) {
+          try {
+            const parsedIds: string[] = JSON.parse(storedReadMessages);
+            setReadMessageIds(parsedIds);
+          } catch (e) {
+            console.error("Failed to parse read messages from localStorage:", e);
+            setReadMessageIds([]); // Fallback to empty if corrupted
+            localStorage.removeItem('currentUserReadMessages'); // Clear corrupted data
+          }
+        } else {
+          setReadMessageIds([]); // No stored messages for this user yet
+        }
+      } else {
+        // Case 2: Stored user DOES NOT match current user (or no stored user)
+        // This means a different user logged in, or it's the first time for this user.
+        // CLEAR any old read message data for security/correctness.
+        console.log(`User changed from ${storedUserId} to ${currentUserId}. Clearing old read messages.`);
+        localStorage.removeItem('currentUserReadMessages');
+        setReadMessageIds([]); // Reset state to empty
+      }
+    } else {
+      // Case 3: No user is logged in (currentUserId is null/undefined)
+      // Clear all user-specific local storage data.
+      console.log("No user logged in. Clearing all user-specific localStorage.");
+      localStorage.removeItem('currentUserId');
+      localStorage.removeItem('currentUserReadMessages');
+      setReadMessageIds([]); // Reset state to empty
+    }
+  }, [user?.user_id]);
+
+
+  const MessageCard = ({ message }: { message: Message }) => {
+    return (
+      <div className="border rounded-lg p-4 shadow-sm bg-white w-full break-words">
+        <div className="mb-1 text-gray-800 flex flex-row items-center justify-between">
+          <h4 className="text-lg sm:text-xl font-semibold truncate">
+            {message.subject}
+          </h4>
+          <MailsIcon
+            className={`w-max h-max p-2 text-lg ${readMessageIds.includes(String(message.mail_id)) ? 'bg-green-500' : ''
+              }`}
+            onClick={() => {
+              const stored = JSON.parse(localStorage.getItem('currentUserReadMessages') || '[]');
+              if (!stored.includes(String(message.mail_id))) {
+                const updated = [...stored, String(message.mail_id)];
+                localStorage.setItem('currentUserReadMessages', JSON.stringify(updated));
+              }
+            }}
+          />
+        </div>
+        <p className="text-sm text-gray-500 truncate">From: {message.sender}</p>
+        <p className="mt-2 text-gray-700 whitespace-pre-wrap">{message.text}</p>
+      </div>
+    );
+  };
+
+
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto mt-20 min-h-screen">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4">
@@ -143,11 +245,10 @@ const Mail = () => {
 
       {/* Form */}
       <div
-        className={`overflow-hidden transition-all duration-500 ease-in-out ${
-          showForm
-            ? "max-h-[1000px] opacity-100 scale-100 mb-6"
-            : "max-h-0 opacity-0 scale-95 mb-0"
-        } border rounded-lg p-4 shadow-md bg-white`}
+        className={`overflow-hidden transition-all duration-500 ease-in-out ${showForm
+          ? "max-h-[1000px] opacity-100 scale-100 mb-6"
+          : "max-h-0 opacity-0 scale-95 mb-0"
+          } border rounded-lg p-4 shadow-md bg-white`}
       >
         <h3 className="text-lg font-semibold mb-4">New Mail</h3>
         <div className="grid grid-cols-1 gap-3">
