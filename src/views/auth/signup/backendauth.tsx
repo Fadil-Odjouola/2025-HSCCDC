@@ -58,7 +58,6 @@ export async function getuserobj(
   list?: string[],
   value?: string | string[]
 ): Promise<any> {
-
   if (list && list.length > 0) {
     const results = await Promise.all(
       list.map(async (username: string) => {
@@ -113,7 +112,7 @@ export async function getuserobj(
 
       const result = await response.json();
       const user = result.user;
-      console.log(user)
+      console.log(user);
       return user;
 
       /*if (Array.isArray(value)) {
@@ -180,38 +179,36 @@ export async function getallusers(apikey: string) {
   let hasMore = true;
 
   try {
-    while (hasMore) {
-      const url = new URL("https://qoverflow.api.hscc.bdpa.org/v1/users");
-      if (after) {
-        url.searchParams.append("after", after);
-      }
+    const url = new URL("https://qoverflow.api.hscc.bdpa.org/v1/users");
+    if (after) {
+      url.searchParams.append("after", after);
+    }
 
-      const response = await fetch(url.toString(), {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${apikey}`,
-          "Content-Type": "application/json",
-        },
-      });
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${apikey}`,
+        "Content-Type": "application/json",
+      },
+    });
 
-      const result = await response.json();
+    const result = await response.json();
 
-      if (result.success && Array.isArray(result.users)) {
-        console.log(`Fetched ${result.users.length} users`);
+    if (result.success && Array.isArray(result.users)) {
+      console.log(`Fetched ${result.users.length} users`);
 
-        allUsers.push(...result.users);
+      allUsers.push(...result.users);
 
-        // If less than 100 users returned, there's nothing more to paginate
-        if (result.users.length < 100) {
-          hasMore = false;
-        } else {
-          // Get the user_id of the last user for the `after` param
-          after = result.users[result.users.length - 1].user_id;
-        }
-      } else {
-        console.log(`ERROR: ${result.error || "Unknown error"}`);
+      // If less than 100 users returned, there's nothing more to paginate
+      if (result.users.length < 100) {
         hasMore = false;
+      } else {
+        // Get the user_id of the last user for the `after` param
+        after = result.users[result.users.length - 1].user_id;
       }
+    } else {
+      console.log(`ERROR: ${result.error || "Unknown error"}`);
+      hasMore = false;
     }
 
     console.log(`✅ Total users fetched: ${allUsers.length}`);
@@ -221,4 +218,3 @@ export async function getallusers(apikey: string) {
     return [];
   }
 }
-

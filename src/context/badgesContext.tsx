@@ -36,8 +36,8 @@ const initialBadges: BadgesMap = {
     subbadges: {
       "Great Question": {
         title: "Great Question",
-        description: "Asked a question with a score of 100 or more",
-        completed: true,
+        description: "Have a question with net total points of 100 > higher",
+        completed: false,
       },
       "Great Answer": {
         title: "Great Answer",
@@ -51,7 +51,7 @@ const initialBadges: BadgesMap = {
       },
       Zombie: {
         title: "Zombie",
-        description: "Answered a question more than 30 days after it was asked",
+        description: "Have  question that is Reopened",
         completed: false,
       },
     },
@@ -62,8 +62,8 @@ const initialBadges: BadgesMap = {
     subbadges: {
       "Good Question": {
         title: "Good Question",
-        description: "Asked a question with a score of 25 or more",
-        completed: true,
+        description: "Have a question with net total points 25 > higher",
+        completed: false,
       },
       "Good Answer": {
         title: "Good Answer",
@@ -88,8 +88,8 @@ const initialBadges: BadgesMap = {
     subbadges: {
       "Nice Question": {
         title: "Nice Question",
-        description: "Asked a question with a score of 10 or more",
-        completed: true,
+        description: "Have a question with net total points 10 > higher",
+        completed: false,
       },
       "Nice Answer": {
         title: "Nice Answer",
@@ -104,7 +104,7 @@ const initialBadges: BadgesMap = {
       Scholar: {
         title: "Scholar",
         description: "Accept an answer",
-        completed: null,
+        completed: false,
       },
     },
   },
