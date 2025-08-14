@@ -10,6 +10,8 @@ import { updateUserPoints } from "@/api/changepoints";
 import { apikey } from "@/api/apikey";
 
 
+
+
 interface PopoverProps {
   onClose: () => void;
 }
@@ -54,6 +56,21 @@ const Popover: React.FC<PopoverProps> = ({ onClose }) => {
   const [showMessage, setShowMessage] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { user, updateUser } = useUser();
+  const [tags, setTags] = useState<string[]>([""]);
+  const [tbq, setTbq] = useState<Record<string, string[]>>();
+
+  const handleTagChange = (index: number, value: string) => {
+    const updated = [...tags];
+    updated[index] = value;
+    setTags(updated);
+  };
+  const addTagField = () => {
+    if (tags.length < 5) {
+      setTags([...tags, ""]);
+    }
+  };
+
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -66,7 +83,22 @@ const Popover: React.FC<PopoverProps> = ({ onClose }) => {
   }, [onClose]);
 
   const handleCreate = async () => {
+
     const result = await createQuestion(user?.username, title, text, apikey);
+
+    const existing: Record<string, string[]> =
+      JSON.parse(localStorage.getItem("tagsByQuestion") || "{}");
+
+    // 3. Add the new question and its tags
+    existing[title] = tags.filter((tag) => tag.trim() !== "");
+
+    // 4. Save updated object back to localStorage
+    localStorage.setItem("tagsByQuestion", JSON.stringify(existing));
+
+    // 5. Optionally update local state if you want to use it immediately
+    setTbq(existing);
+
+    console.log("Stored locally:", existing);
     console.log(result);
     setShowMessage(true);
     onClose();
@@ -142,6 +174,28 @@ const Popover: React.FC<PopoverProps> = ({ onClose }) => {
                 </button>
               ))}
             </div>
+
+
+            {tags.map((tag, i) => (
+              <input
+                key={i}
+                className="border rounded-lg px-3 py-2 mb-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                type="text"
+                placeholder="Tag..."
+                value={tag}
+                onChange={(e) => handleTagChange(i, e.target.value)}
+              />
+            ))}
+
+            {tags.length < 5 && (
+              <button
+                type="button"
+                className="px-3 py-1 text-white bg-blue-500 rounded-lg mb-4"
+                onClick={addTagField}
+              >
+                + Add Tag
+              </button>
+            )}
 
             <input
               className="border rounded-lg px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"

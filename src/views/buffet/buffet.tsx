@@ -14,6 +14,7 @@ import { CheckIcon } from "lucide-react";
 import { getanswers, getquestions } from "../dashboard/backendDashboard";
 import { useBadges } from "@/context/badgesContext";
 import { apikey } from "@/api/apikey";
+import type { Tag } from "@/types/local";
 
 type SortType = "recent" | "best" | "interesting" | "hot";
 
