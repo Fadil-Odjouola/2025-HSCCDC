@@ -124,7 +124,7 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!user?.points) return;
-    updateUser({ points: 200 });
+    updateUser({ points: 3000 });
     // Check if the user has enough points to get the Socratic badge
     if (user.points >= 10000) {
       toggleSubBadgeCompletion("Gold", "Socratic", true);
@@ -151,12 +151,27 @@ export default function Navbar() {
       const answersResult = await getanswers(user.username, apikey);
       result.questions.map((question: any) => {
         const netTotal = question.upvotes - question.downvotes;
+        if (question.hasAcceptedAnswer) {
+          toggleSubBadgeCompletion("Bronze", "Scholar", true);
+        }
         if (netTotal >= 100) {
           toggleSubBadgeCompletion("Gold", "Great Question", true);
         } else if (netTotal >= 25) {
           toggleSubBadgeCompletion("Silver", "Good Question", true);
         } else if (netTotal >= 10) {
           toggleSubBadgeCompletion("Bronze", "Nice Question", true);
+        }
+      });
+      answersResult.answers.map((answer: any) => {
+        if (answer.accepted) {
+          const netTotal = answer.upvotes - answer.downvotes;
+          if (netTotal >= 100) {
+            toggleSubBadgeCompletion("Gold", "Great Answer", true);
+          } else if (netTotal >= 25) {
+            toggleSubBadgeCompletion("Silver", "Good Answer", true);
+          } else if (netTotal >= 10) {
+            toggleSubBadgeCompletion("Bronze", "Nice Answer", true);
+          }
         }
       });
     };
@@ -277,7 +292,7 @@ export default function Navbar() {
                 </div>
 
                 {/* User Menu */}
-                <div className="relative inline-block text-left group">
+                <div className="relative inline-block text-left group w-max">
                   <button
                     className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-300 shadow hover:shadow-md transition-all duration-200 hover:bg-gray-100 focus:outline-none"
                     aria-haspopup="true"
@@ -311,7 +326,6 @@ export default function Navbar() {
                     </button>
                   </div>
                 </div>
-
                 {/* Points */}
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-300 shadow hover:shadow-md transition-all duration-200 hover:bg-gray-100 -translate-x-3">
                   <span className="font-medium text-gray-700">Points:</span>
@@ -319,6 +333,56 @@ export default function Navbar() {
                     {user?.points}
                   </span>
                 </div>
+                {Object.values(badges).map((category) => {
+                  // Calculate the number of completed sub-badges
+                  const completedCount = Object.values(
+                    category.subbadges
+                  ).filter((sub) => sub.completed).length;
+                  // Get the total number of sub-badges
+                  const totalCount = Object.keys(category.subbadges).length;
+
+                  return (
+                    // Important: Add a unique 'key' prop when mapping over lists
+                    <>
+                      <div className="relative inline-block text-left group">
+                        <button
+                          className="flex items-center gap-2  w-max h-max p-2 rounded-full bg-white border border-gray-300 shadow hover:shadow-md transition-all duration-200 hover:bg-gray-100 focus:outline-none"
+                          aria-haspopup="true"
+                          aria-expanded="false"
+                        >
+                          <h1
+                            className={`font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)] ${
+                              category.style === "gold"
+                                ? "text-[#E6C200]"
+                                : category.style === "silver"
+                                ? "text-gray-400"
+                                : "text-[#CD7F32]"
+                            }`}
+                          >
+                            {category.name} Badges{" "}
+                            <span className="font-medium text-base text-gray-500">
+                              {completedCount}/{totalCount}
+                            </span>
+                          </h1>
+                        </button>
+                        <div className="absolute right-0 mt-2 flex flex-col gap-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                          {Object.values(category.subbadges).map((sub) => (
+                            <div
+                              className={`block w-full px-4 py-2 text-left text-gray-700  ${
+                                sub.completed
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-gray-100 text-gray-500"
+                              }`}
+                              key={sub.title}
+                            >
+                              {sub.title}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  );
+                })}
               </>
             ) : (
               <div className="relative md:flex items-center space-x-3">
