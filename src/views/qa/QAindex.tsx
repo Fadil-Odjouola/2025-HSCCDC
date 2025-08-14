@@ -26,6 +26,7 @@ import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { useUserCache } from "@/context/userCacheContext";
 dayjs.extend(relativeTime);
 import { apikey } from "@/api/apikey";
+import type { tagsByQuestion } from "@/types/local";
 type VoteType = "closed" | "protected" | "open";
 
 type MailSentMessageProps = {
@@ -131,6 +132,7 @@ export default function QA() {
   const { user, updateUser } = useUser();
   const { hashedEmails, levels } = useUserCache();
   const { questionid } = useParams<string>();
+  const [tbq, setTbq] = useState<tagsByQuestion>();
   const [question, setQuestion] = useState<Question>({
     creator: "",
     title: "",
@@ -149,6 +151,11 @@ export default function QA() {
     closedVotes: null,
     protectedVotes: null,
   });
+
+  useEffect(() => {
+    setTbq(JSON.parse(localStorage.getItem("tagsByQuestion") || "{}"));
+  }, [])
+
   const [ongoingVote, setOngoingVote] = useState<
     "protected" | "closed" | "open" | null
   >(null);
@@ -467,9 +474,8 @@ export default function QA() {
               </div>
               <div className="flex items-center mt-2 gap-2">
                 <img
-                  src={`https://gravatar.com/avatar/${
-                    hashedEmails[question.creator]
-                  }?d=identicon`}
+                  src={`https://gravatar.com/avatar/${hashedEmails[question.creator]
+                    }?d=identicon`}
                   alt={question.creator}
                   className="w-8 h-8 rounded-full"
                 />
@@ -557,11 +563,10 @@ export default function QA() {
                       onClick={() => handleStatusVote("closed")}
                       className={`text-white px-4 py-2 h-max p-4 flex items-center justify-center font-bold text-lg bg-red-600
             hover:bg-red-700 transition-all duration-150 ease-linear rounded-lg
-            ${
-              ongoingVote === "closed" || ongoingVote === "protected"
-                ? "opacity-50 cursor-not-allowed"
-                : ""
-            }`}
+            ${ongoingVote === "closed" || ongoingVote === "protected"
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                        }`}
                       disabled={
                         ongoingVote === "closed" || ongoingVote === "protected"
                       }
@@ -578,11 +583,10 @@ export default function QA() {
                       onClick={() => handleStatusVote("protected")}
                       className={`text-white px-4 py-2 h-max p-4 flex items-center justify-center font-bold text-lg bg-gray-500
             hover:bg-gray-700 transition-all duration-300 ease-linear rounded-lg
-            ${
-              ongoingVote === "protected" || ongoingVote === "closed"
-                ? "opacity-50 cursor-not-allowed"
-                : ""
-            }`}
+            ${ongoingVote === "protected" || ongoingVote === "closed"
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                        }`}
                       disabled={
                         ongoingVote === "protected" || ongoingVote === "closed"
                       }
@@ -664,9 +668,8 @@ export default function QA() {
         <div className="flex items-center gap-2 mt-2">
           <button
             onClick={handleAddAnswer}
-            className={`px-4 py-2 rounded ${
-              isError ? "bg-red-600 " : "bg-green-600 text-white"
-            }`}
+            className={`px-4 py-2 rounded ${isError ? "bg-red-600 " : "bg-green-600 text-white"
+              }`}
           >
             Submit Answer
           </button>
