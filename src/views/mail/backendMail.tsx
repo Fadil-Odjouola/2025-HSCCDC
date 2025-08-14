@@ -1,6 +1,6 @@
 
 interface Maildata {
-  sender: string;
+  sender: string | undefined;
   receiver: string;
   subject: string;
   text: string;
@@ -69,3 +69,6 @@ export async function getmail(username: string ,apikey: string) {
     console.log(err);
   }
 }
+
+
+  

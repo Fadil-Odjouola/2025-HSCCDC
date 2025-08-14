@@ -10,6 +10,7 @@ import { getUserLocal } from "@/components/backendUserLocal";
 import { useUser } from "@/context/UserContext";
 import { motion } from "framer-motion";
 import { useUserCache } from "@/context/userCacheContext";
+import {CheckIcon} from "lucide-react"
 
 type SortType = "recent" | "best" | "interesting" | "hot";
 
@@ -36,10 +37,12 @@ function QuestionCard({
       transition={{ duration: 0.3 }}
       className="w-full sm:w-[48%] lg:w-[31%]"
     >
+      
       <div className="rounded-2xl border p-4 hover:shadow-xl transition-all duration-300 bg-white mb-3 h-full">
-        <div className="text-lg sm:text-xl font-semibold mb-1 text-gray-800">
-          {question.title}
+        <div className="text-lg sm:text-xl font-semibold mb-1 text-gray-800 flex flex-row items-center justify-between ">
+          {question.title} <CheckIcon className={`w-max h-max p-2 text-lg ${question.hasAcceptedAnswer ? `bg-green-500` : `bg-gray-500`} text-white rounded-2xl`}></CheckIcon>
         </div>
+        
         <div className="text-sm text-gray-700 flex flex-col gap-1">
           <span className="text-[16px]">
             <b>Votes:</b> {question.upvotes - question.downvotes}
