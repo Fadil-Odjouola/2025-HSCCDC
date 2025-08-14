@@ -1,5 +1,5 @@
 // ...other imports
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,6 +15,8 @@ import {
   updateAnswersVote,
 } from "./backendQA";
 import { updateUserPoints } from "@/api/changepoints";
+import { useBadges } from "@/context/badgesContext";
+
 
 dayjs.extend(relativeTime);
 const PAGE_SIZE = 3;
@@ -114,6 +116,7 @@ export const PaginatedAnswers = ({
   isError = false,
 }: PaginatedAnswersProps) => {
   const { user, updateUser } = useUser();
+  const { badges, setBadges } = useBadges();
   const { hashedEmails, levels, loading: userCacheLoading } = useUserCache();
 
   const [answerComments, setAnswerComments] = useState<Record<string, any[]>>(
@@ -135,6 +138,34 @@ export const PaginatedAnswers = ({
   >({});
 
   const commentPanelRef = useRef<HTMLDivElement>(null);
+
+  const toggleSubBadgeCompletion = useCallback(
+    (categoryName: string, subBadgeTitle: string, isCompleted: boolean) => {
+      setBadges((currentBadges) => {
+        const newBadges = { ...currentBadges };
+        const categoryToUpdate = newBadges[categoryName];
+        if (!categoryToUpdate) return currentBadges;
+
+        const newCategory = { ...categoryToUpdate };
+        const subBadgeToUpdate = newCategory.subbadges[subBadgeTitle];
+        if (!subBadgeToUpdate || subBadgeToUpdate.completed === isCompleted) {
+          return currentBadges;
+        }
+
+        newCategory.subbadges = {
+          ...newCategory.subbadges,
+          [subBadgeTitle]: {
+            ...subBadgeToUpdate,
+            completed: isCompleted,
+          },
+        };
+
+        newBadges[categoryName] = newCategory;
+        return newBadges;
+      });
+    },
+    [setBadges]
+  );
 
   // Handle outside click
   useEffect(() => {
@@ -303,6 +334,7 @@ export const PaginatedAnswers = ({
     const result = await updateAnswerStatus(question_id, answer_id, true);
     if (result.success) {
       setAnswerAccepted(true);
+      toggleSubBadgeCompletion("Bronze", "Scholar", true)
       console.log(result);
     } else {
       setAnswerAccepted(false);

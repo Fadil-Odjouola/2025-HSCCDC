@@ -10,7 +10,7 @@ import {
   updateCommentsVote,
 } from "./backendQA";
 import { useUser } from "@/context/UserContext";
-const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
+import { apikey } from "@/api/apikey";
 
 dayjs.extend(relativeTime);
 

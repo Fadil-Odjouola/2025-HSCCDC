@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { handleSubmit, getuserobj, login } from "./backendauth";
 import deriveKeyWithSalt from "@/utility/passhash";
 import ForgotPassword from "./forgotpass";
+import { apikey } from "@/api/apikey";
 
 
 interface CountdownTimerProps {
@@ -64,7 +65,6 @@ export default function Signup() {
   const [rememberme, Setrememberme] = useState<boolean>(false);
   const [tries, setTries] = useState(3);
   const [isLocked, setIsLocked] = useState(false);
-  const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
 
   // Lockout duration 1 hour
   const LOCKOUT_DURATION = 60 * 60 * 1000;

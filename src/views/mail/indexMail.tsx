@@ -3,6 +3,7 @@ import { sendmail, getmail } from "./backendMail";
 import { getUserLocal } from "@/components/backendUserLocal";
 import { useUser } from "@/context/UserContext";
 import { MailsIcon } from "lucide-react";
+import { apikey } from "@/api/apikey";
 
 interface Message {
   mail_id: number;
@@ -22,13 +23,6 @@ type MailSentMessageProps = {
   duration?: number;
   onFadeOut?: () => void;
 };
-
-const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
-
-
-
-
-
 
 const MailSentMessage: React.FC<MailSentMessageProps> = ({
   duration = 3000,

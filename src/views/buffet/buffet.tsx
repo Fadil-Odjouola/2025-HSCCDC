@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import type { Question } from "@/types/questions";
 import { fetchQuestions } from "@/api/questions";
 import { useSearch } from "@/context/SearchContext";
@@ -10,7 +10,10 @@ import { getUserLocal } from "@/components/backendUserLocal";
 import { useUser } from "@/context/UserContext";
 import { motion } from "framer-motion";
 import { useUserCache } from "@/context/userCacheContext";
-import {CheckIcon} from "lucide-react"
+import { CheckIcon } from "lucide-react";
+import { getanswers, getquestions } from "../dashboard/backendDashboard";
+import { useBadges } from "@/context/badgesContext";
+import { apikey } from "@/api/apikey";
 
 type SortType = "recent" | "best" | "interesting" | "hot";
 
@@ -37,12 +40,16 @@ function QuestionCard({
       transition={{ duration: 0.3 }}
       className="w-full sm:w-[48%] lg:w-[31%]"
     >
-      
       <div className="rounded-2xl border p-4 hover:shadow-xl transition-all duration-300 bg-white mb-3 h-full">
         <div className="text-lg sm:text-xl font-semibold mb-1 text-gray-800 flex flex-row items-center justify-between ">
-          {question.title} <CheckIcon className={`w-max h-max p-2 text-lg ${question.hasAcceptedAnswer ? `bg-green-500` : `bg-gray-500`} text-white rounded-2xl`}></CheckIcon>
+          {question.title}{" "}
+          <CheckIcon
+            className={`w-max h-max p-2 text-lg ${
+              question.hasAcceptedAnswer ? `bg-green-500` : `bg-gray-500`
+            } text-white rounded-2xl`}
+          ></CheckIcon>
         </div>
-        
+
         <div className="text-sm text-gray-700 flex flex-col gap-1">
           <span className="text-[16px]">
             <b>Votes:</b> {question.upvotes - question.downvotes}
@@ -73,7 +80,8 @@ function QuestionCard({
             onClick={(e) => {
               e.preventDefault();
               const link = `${window.location.origin}/question/${question.question_id}`;
-              navigator.clipboard.writeText(link)
+              navigator.clipboard
+                .writeText(link)
                 .then(() => alert("Link copied to clipboard!"))
                 .catch(() => alert("Failed to copy link"));
             }}
@@ -100,6 +108,7 @@ export default function Buffet() {
 
   const { searchQuery } = useSearch();
   const { user } = useUser();
+  const { badges, setBadges } = useBadges();
   const { hashedEmails, levels, loading: usersLoading } = useUserCache();
 
   const loaderRef = useRef<HTMLDivElement | null>(null);
@@ -108,6 +117,53 @@ export default function Buffet() {
   const filteredQuestions = useMemo(() => {
     return searchQuestions(questions, searchQuery);
   }, [questions, searchQuery]);
+
+  const toggleSubBadgeCompletion = useCallback(
+    (categoryName: string, subBadgeTitle: string, isCompleted: boolean) => {
+      setBadges((currentBadges) => {
+        const newBadges = { ...currentBadges };
+        const categoryToUpdate = newBadges[categoryName];
+        if (!categoryToUpdate) return currentBadges;
+
+        const newCategory = { ...categoryToUpdate };
+        const subBadgeToUpdate = newCategory.subbadges[subBadgeTitle];
+        if (!subBadgeToUpdate || subBadgeToUpdate.completed === isCompleted) {
+          return currentBadges;
+        }
+
+        newCategory.subbadges = {
+          ...newCategory.subbadges,
+          [subBadgeTitle]: {
+            ...subBadgeToUpdate,
+            completed: isCompleted,
+          },
+        };
+
+        newBadges[categoryName] = newCategory;
+        return newBadges;
+      });
+    },
+    [setBadges]
+  );
+
+  useEffect(() => {
+    if (!user?.username) return;
+    const fetchQuestions = async () => {
+      const result = await getquestions(user.username, apikey);
+      const answersResult = await getanswers(user.username, apikey);
+      result.questions.map((question: any) => {
+        const netTotal = question.upvotes - question.downvotes;
+        if (netTotal >= 100) {
+          toggleSubBadgeCompletion("Gold", "Great Question", true);
+        } else if (netTotal >= 25) {
+          toggleSubBadgeCompletion("Silver", "Good Question", true);
+        } else if (netTotal >= 10) {
+          toggleSubBadgeCompletion("Bronze", "Nice Question", true);
+        }
+      });
+    };
+    fetchQuestions();
+  }, [user?.username]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -126,7 +182,7 @@ export default function Buffet() {
     try {
       const param = sortType === "recent" ? "d" : sortMap[sortType];
       const response = await fetchQuestions(param, afterCursor);
-      console.log(response)
+      console.log(response);
 
       if (response.length === 0) {
         setHasMore(false);
@@ -170,7 +226,7 @@ export default function Buffet() {
     if (localUser) setLoggedIn(true);
   }, []);
 
-  if (isLoading && questions.length === 0 )  {
+  if (isLoading && questions.length === 0) {
     return (
       <div className="pt-16 p-6 max-w-3xl mx-auto bg-gray-50 rounded-xl shadow-sm mt-20 text-center text-gray-700">
         Loading questions...

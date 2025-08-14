@@ -14,9 +14,8 @@ import { motion } from "framer-motion";
 import { useUser } from "@/context/UserContext";
 import type { Question } from "@/types/questions";
 import { useBadges } from "@/context/badgesContext";
-import { object } from "framer-motion/client";
+import { apikey } from "@/api/apikey";
 
-const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
 
 type MailSentMessageProps = {
   duration?: number;

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import hashEmail from "@/utility/emailhash";
 import level from "@/api/levelSys";
 import { getallusers } from "@/views/auth/signup/backendauth";
+import { apikey } from "@/api/apikey";
 
 // ✅ In-memory persistent cache
 let cachedUsers: Record<string, any> = {};
@@ -46,8 +47,6 @@ export function UserCacheProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(!hasFetchedOnce);
   const [error, setError] = useState<string | null>(null);
   const [isCached, setIsCached] = useState(hasFetchedOnce);
-
-  const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18"; // Replace with env var in prod
 
   const fetchUsers = async () => {
     if (hasFetchedOnce || isCurrentlyFetching) return;

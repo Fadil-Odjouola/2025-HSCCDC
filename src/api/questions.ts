@@ -1,4 +1,5 @@
 import type { Question } from "@/types/questions";
+import { apikey } from "./apikey";
 
 const BASE_URL = "https://qoverflow.api.hscc.bdpa.org/v1";
 
@@ -24,7 +25,7 @@ export async function fetchQuestions(
 
   const response = await fetch(url, {
     headers: {
-      Authorization: "bearer 1ded7eb6-ab91-47f7-9cf7-7d1319a32e18",
+      Authorization: `bearer ${apikey}`,
       "Content-Type": "application/json",
     },
   });

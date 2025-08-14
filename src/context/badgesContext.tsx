@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 export interface SubBadge {
   title: string;
   description: string;
-  completed: boolean;
+  completed: boolean | null;
 }
 
 // BadgeCategory defines the structure for a single badge group (e.g., "Gold")
@@ -46,7 +46,7 @@ const initialBadges: BadgesMap = {
       },
       Socratic: {
         title: "Socratic",
-        description: "Asked a well-received question on 100 separate days",
+        description: "Have at least 10,000 points",
         completed: false,
       },
       Zombie: {
@@ -104,7 +104,7 @@ const initialBadges: BadgesMap = {
       Scholar: {
         title: "Scholar",
         description: "Accept an answer",
-        completed: false,
+        completed: null,
       },
     },
   },

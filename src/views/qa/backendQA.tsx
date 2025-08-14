@@ -1,4 +1,5 @@
 import type { Question } from "@/types/questions";
+import { apikey } from "@/api/apikey";
 
 export async function getQAquestion(questionsID: string, apikey: string) {
   try {
@@ -281,7 +282,6 @@ export async function updateQuestionVote(
   username: string,
   target: string
 ) {
-  const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
 
   try {
     const payload = {
@@ -317,7 +317,6 @@ export async function updateQuestionVote(
 }
 
 export async function updateQuestionViews(question_id: string, value: string) {
-  const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
 
   try {
     const payload = {
@@ -392,7 +391,6 @@ export async function updateCommentsVote(
   username: string,
   target: string
 ) {
-  const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
 
   try {
     const payload = {
@@ -468,7 +466,6 @@ export async function updateAnswersVote(
   username: string,
   target: string
 ) {
-  const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
 
   try {
     const payload = {
@@ -508,7 +505,6 @@ export async function updateAnswerStatus(
   answer_id: string,
   status: boolean
 ) {
-  const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
 
   try {
     const payload = {
@@ -567,8 +563,6 @@ export async function updateQuestionStatus(
   question_id: string,
   status: "open" | "closed" | "protected"
 ) {
-  const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
-
   try {
     const payload = { status: status };
 

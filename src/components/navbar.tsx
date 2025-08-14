@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Menu, X, Search, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./miniUI/button";
@@ -6,6 +6,9 @@ import { getUserLocal } from "./backendUserLocal";
 import { useSearch } from "@/context/SearchContext";
 import level from "@/api/levelSys";
 import { useUser } from "@/context/UserContext";
+import { useBadges } from "@/context/badgesContext";
+import { apikey } from "@/api/apikey";
+import { getanswers, getquestions } from "@/views/dashboard/backendDashboard";
 
 const hashEmail = async (email: string): Promise<string> => {
   const cleanedEmail = email.trim().toLowerCase();
@@ -25,6 +28,7 @@ export default function Navbar() {
   const { user, updateUser } = useUser();
   const [hashedemail, setHashedMail] = useState("");
   const [dateFilter, setDateFilter] = useState(""); // YYYY-MM-DD or empty
+  const { badges, setBadges } = useBadges();
 
   // On mount, load user info from local storage
   useEffect(() => {
@@ -90,6 +94,75 @@ export default function Navbar() {
     }
   }, [dateFilter]);
 
+  const toggleSubBadgeCompletion = useCallback(
+    (categoryName: string, subBadgeTitle: string, isCompleted: boolean) => {
+      setBadges((currentBadges) => {
+        const newBadges = { ...currentBadges };
+        const categoryToUpdate = newBadges[categoryName];
+        if (!categoryToUpdate) return currentBadges;
+
+        const newCategory = { ...categoryToUpdate };
+        const subBadgeToUpdate = newCategory.subbadges[subBadgeTitle];
+        if (!subBadgeToUpdate || subBadgeToUpdate.completed === isCompleted) {
+          return currentBadges;
+        }
+
+        newCategory.subbadges = {
+          ...newCategory.subbadges,
+          [subBadgeTitle]: {
+            ...subBadgeToUpdate,
+            completed: isCompleted,
+          },
+        };
+
+        newBadges[categoryName] = newCategory;
+        return newBadges;
+      });
+    },
+    [setBadges]
+  );
+
+  useEffect(() => {
+    if (!user?.points) return;
+    updateUser({ points: 200 });
+    // Check if the user has enough points to get the Socratic badge
+    if (user.points >= 10000) {
+      toggleSubBadgeCompletion("Gold", "Socratic", true);
+    } else {
+      toggleSubBadgeCompletion("Gold", "Socratic", false);
+    }
+
+    // Check for other point-based badges
+    if (user.points >= 3000) {
+      toggleSubBadgeCompletion("Silver", "Inquisitive", true);
+    } else {
+      toggleSubBadgeCompletion("Silver", "Inquisitive", false);
+    }
+
+    if (user.points >= 100) {
+      toggleSubBadgeCompletion("Bronze", "Curious", true);
+    } else {
+      toggleSubBadgeCompletion("Bronze", "Curious", false);
+    }
+
+    if (!user?.username) return;
+    const fetchQuestions = async () => {
+      const result = await getquestions(user.username, apikey);
+      const answersResult = await getanswers(user.username, apikey);
+      result.questions.map((question: any) => {
+        const netTotal = question.upvotes - question.downvotes;
+        if (netTotal >= 100) {
+          toggleSubBadgeCompletion("Gold", "Great Question", true);
+        } else if (netTotal >= 25) {
+          toggleSubBadgeCompletion("Silver", "Good Question", true);
+        } else if (netTotal >= 10) {
+          toggleSubBadgeCompletion("Bronze", "Nice Question", true);
+        }
+      });
+    };
+    fetchQuestions();
+  }, [user?.points, toggleSubBadgeCompletion]);
+
   return (
     <nav
       className={`
@@ -135,11 +208,7 @@ export default function Navbar() {
                 type="text"
                 placeholder="Search..."
                 className={`transition-all duration-300
-                  ${
-                    searchOpen
-                      ? "w-48 px-4 opacity-100"
-                      : "w-0 px-0 opacity-0"
-                  }
+                  ${searchOpen ? "w-48 px-4 opacity-100" : "w-0 px-0 opacity-0"}
                   py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary bg-white shadow-sm hover:shadow-lg
                 `}
                 style={{ minWidth: searchOpen ? "12rem" : "0" }}
@@ -202,7 +271,9 @@ export default function Navbar() {
                 {/* Level */}
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-300 shadow hover:shadow-md transition-all duration-200 hover:bg-gray-100 translate-x-3">
                   <span className="font-medium text-gray-700">Level:</span>
-                  <span className="font-semibold text-gray-900">{user?.level}</span>
+                  <span className="font-semibold text-gray-900">
+                    {user?.level}
+                  </span>
                 </div>
 
                 {/* User Menu */}
@@ -244,7 +315,9 @@ export default function Navbar() {
                 {/* Points */}
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-300 shadow hover:shadow-md transition-all duration-200 hover:bg-gray-100 -translate-x-3">
                   <span className="font-medium text-gray-700">Points:</span>
-                  <span className="font-semibold text-gray-900">{user?.points}</span>
+                  <span className="font-semibold text-gray-900">
+                    {user?.points}
+                  </span>
                 </div>
               </>
             ) : (
@@ -266,7 +339,11 @@ export default function Navbar() {
               onClick={() => setIsOpen(!isOpen)}
               aria-label="Toggle menu"
             >
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
             </Button>
           </div>
         </div>

@@ -24,9 +24,8 @@ import { updateUserPoints } from "@/api/changepoints";
 import { motion } from "framer-motion";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { useUserCache } from "@/context/userCacheContext";
-
 dayjs.extend(relativeTime);
-const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
+import { apikey } from "@/api/apikey";
 type VoteType = "closed" | "protected" | "open";
 
 type MailSentMessageProps = {

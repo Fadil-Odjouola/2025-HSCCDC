@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { updatepassword } from "@/views/dashboard/backendDashboard";
 
-const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
+import { apikey } from "@/api/apikey";
 
 type MailSentMessageProps = {
   duration?: number;

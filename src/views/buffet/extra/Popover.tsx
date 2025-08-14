@@ -7,6 +7,7 @@ import updateUserStorageField, {
 } from "@/components/backendUserLocal";
 import { useUser } from "@/context/UserContext";
 import { updateUserPoints } from "@/api/changepoints";
+import { apikey } from "@/api/apikey";
 
 
 interface PopoverProps {
@@ -46,8 +47,6 @@ const MailSentMessage: React.FC<MailSentMessageProps> = ({
     </div>
   );
 };
-
-const apikey = "1ded7eb6-ab91-47f7-9cf7-7d1319a32e18";
 
 const Popover: React.FC<PopoverProps> = ({ onClose }) => {
   const [title, setTitle] = useState("");
