@@ -381,7 +381,7 @@ export default function QA() {
   };
 
   const handleUndoVote = async () => {
-    if (!user?.username || !alreadyVotedTarget) return;
+    if (!user?.username) return;
 
     const result = await updateQuestionVote(
       question.question_id,
@@ -389,26 +389,22 @@ export default function QA() {
       user.username,
       alreadyVotedTarget
     );
-    console.log(result)
+    console.log(result);
 
-    if (result.success) {
-      // Update local vote count
-      setQuestion((prev) => ({
-        ...prev,
-        upvotes:
-          alreadyVotedTarget === "upvotes" ? prev.upvotes - 1 : prev.upvotes,
-        downvotes:
-          alreadyVotedTarget === "downvotes"
-            ? prev.downvotes - 1
-            : prev.downvotes,
-      }));
+    // Update local vote count
+    setQuestion((prev) => ({
+      ...prev,
+      upvotes:
+        alreadyVotedTarget === "upvotes" ? prev.upvotes - 1 : prev.upvotes,
+      downvotes:
+        alreadyVotedTarget === "downvotes"
+          ? prev.downvotes - 1
+          : prev.downvotes,
+    }));
 
-      // Clear vote state
-      setAlreadyVoted(false);
-      setAlreadyVotedTarget("");
-    } else {
-      console.error("Failed to undo vote");
-    }
+    // Clear vote state
+    setAlreadyVoted(false);
+    setAlreadyVotedTarget("");
   };
 
   function detectOngoingVote(question: Question): VoteType | null {
