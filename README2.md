@@ -10,11 +10,16 @@ This project replicates most of Stack Overflow’s core features, including post
 
 - 📝 Post and browse questions and answers
 - 🔍 Search functionality
+- 📝 comment on any question or answer
 - 👍 Upvote/downvote system
 - 🧠 Sort by most interesting, most recent, best, or hottest
 - 🪄 Smooth animations with Framer Motion
 - 📱 Fully responsive layout
 - 🎨 Utility-first design with Tailwind CSS
+- ✅ Rich text editor for questions/answers
+- 👤 User authentication (with a private API from a coding competiont I had)
+
+
 
 ---
 
@@ -56,11 +61,6 @@ Open `http://localhost:5173` to view the app in your browser.
 2025-HSCCDC/
 ├── public/              # Static assets
 ├── src/                 # Main application source code
-│   ├── components/      # Reusable UI components
-│   ├── pages/           # Route pages (e.g., Home, Question Detail)
-│   ├── hooks/           # Custom React hooks
-│   ├── utils/           # Utility/helper functions
-│   └── App.tsx          # App entry
 ├── index.html
 ├── vite.config.ts       # Vite configuration
 ├── tailwind.config.js   # Tailwind config
@@ -69,19 +69,10 @@ Open `http://localhost:5173` to view the app in your browser.
 
 ---
 
-## 📸 Screenshots
-
-*(Add screenshots or screen recordings here to showcase the UI)*
-
----
-
 ## 🛠️ Future Enhancements
 
-- ✅ User authentication (JWT or OAuth)
-- ✅ Comment system
 - ✅ Tag-based filtering
 - ✅ Admin/moderation panel
-- ✅ Rich text editor for questions/answers
 - ✅ Mobile-first enhancements
 
 ---
