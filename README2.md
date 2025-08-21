@@ -98,21 +98,3 @@ To contribute:
 5. Submit a pull request
 
 ---
-
-## 📝 License
-
-This project is open-source and available under the [MIT License](LICENSE).
-
----
-
-## 👤 Author
-
-**Fadil Odjouola**  
-🔗 [GitHub](https://github.com/Fadil-Odjouola)
-
----
-
-## 💬 Feedback
-
-Have questions or suggestions?  
-Feel free to open an issue or reach out!
